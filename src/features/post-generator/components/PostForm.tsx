@@ -1,37 +1,37 @@
 'use client'
 
 import React, { useState } from 'react';
-
 import { Characters } from '../data/characters';
+import DownloadButton from '@/components/generator/DownloadButton';
+import PostCanvas from './PostCanvas';
 
 const PostForm: React.FC = () => {
-  // State for form fields
   const [code, setCode] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
-  const [selectedCharacters, setSelectedCharacters] = useState<{[key: string]: string}>({});
+  const [selectedCharacters, setSelectedCharacters] = useState<{ [key: string]: string }>({});
   const [netPrice, setNetPrice] = useState('');
   const [isStarterAccount, setIsStarterAccount] = useState(false);
   const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null); // Store generated image URL
 
-  // Handle game checkbox changes
+  // Handle game selection
   const handleGameChange = (game: string) => {
-    setSelectedGames(prev => 
-      prev.includes(game) 
+    setSelectedGames(prev =>
+      prev.includes(game)
         ? prev.filter(g => g !== game)
         : [...prev, game]
     );
-    
-    // Reset characters for this game when unchecked
+
     if (selectedGames.includes(game)) {
       setSelectedCharacters(prev => {
-        const newChars = {...prev};
+        const newChars = { ...prev };
         delete newChars[game];
         return newChars;
       });
     }
   };
 
-  // Handle character selection for a specific game
+  // Handle character selection
   const handleCharacterChange = (game: string, character: string) => {
     setSelectedCharacters(prev => ({
       ...prev,
@@ -39,16 +39,12 @@ const PostForm: React.FC = () => {
     }));
   };
 
-  // Validate and format net price
+  // Handle net price input
   const handleNetPriceChange = (value: string) => {
-    // Remove any non-digit characters
     const cleanedValue = value.replace(/\D/g, '');
-    
-    // Append 'K' if value is not empty
     setNetPrice(cleanedValue ? `${cleanedValue}K` : '');
   };
 
-  // Form submission handler (just logs data for now)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({
@@ -63,25 +59,27 @@ const PostForm: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit}>
+      <PostCanvas onImageGenerated={setImageUrl} />
+
       {/* Code Input */}
       <div>
         <label>
           Code:
-          <input 
-            type="text" 
-            value={code} 
-            onChange={(e) => setCode(e.target.value)} 
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
           />
         </label>
       </div>
 
-      {/* Game Checkboxes */}
+      {/* Game Selection */}
       <div>
         <label>Select Games:</label>
         {Object.keys(Characters).map(game => (
           <label key={game}>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={selectedGames.includes(game)}
               onChange={() => handleGameChange(game)}
             />
@@ -90,32 +88,31 @@ const PostForm: React.FC = () => {
         ))}
       </div>
 
-    {/* Character Dropdowns (Dynamic based on selected games) */}
-    {selectedGames.map((game) => (
-    <div key={game}>
-        <label>{game} Character:</label>
-        <select
-        value={selectedCharacters[game] || ''}
-        onChange={(e) => handleCharacterChange(game, e.target.value)}
-        >
-        <option value="">Select a Character</option>
-        {/* Iterate over the characters for the selected game */}
-        {Object.keys(Characters[game]).map((character) => (
-            <option key={character} value={character}>
-            {character}
-            </option>
-        ))}
-        </select>
-    </div>
-    ))}
+      {/* Character Selection */}
+      {selectedGames.map((game) => (
+        <div key={game}>
+          <label>{game} Character:</label>
+          <select
+            value={selectedCharacters[game] || ''}
+            onChange={(e) => handleCharacterChange(game, e.target.value)}
+          >
+            <option value="">Select a Character</option>
+            {Object.keys(Characters[game]).map((character) => (
+              <option key={character} value={character}>
+                {character}
+              </option>
+            ))}
+          </select>
+        </div>
+      ))}
 
-      {/* Net Price Input */}
+      {/* Net Price */}
       <div>
         <label>
           Net Price:
-          <input 
-            type="text" 
-            value={netPrice} 
+          <input
+            type="text"
+            value={netPrice}
             onChange={(e) => handleNetPriceChange(e.target.value)}
             placeholder="Enter price (e.g., 50, 1500)"
           />
@@ -125,8 +122,8 @@ const PostForm: React.FC = () => {
       {/* Starter Account Checkbox */}
       <div>
         <label>
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             checked={isStarterAccount}
             onChange={(e) => setIsStarterAccount(e.target.checked)}
           />
@@ -134,21 +131,21 @@ const PostForm: React.FC = () => {
         </label>
       </div>
 
-      {/* Description Input */}
+      {/* Description */}
       <div>
         <label>
           Description:
-          <input 
-            type="text" 
-            value={description} 
+          <input
+            type="text"
+            value={description}
             onChange={(e) => setDescription(e.target.value.slice(0, 30))}
             maxLength={30}
           />
         </label>
       </div>
 
-      {/* Submit Button */}
-      <button type="submit">Submit</button>
+      {/* Download Button (Enabled only when image is generated) */}
+      <DownloadButton imageUrl={imageUrl} />
     </form>
   );
 };

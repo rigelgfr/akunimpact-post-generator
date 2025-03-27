@@ -15,23 +15,23 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
         },
     },
     'hsr': {
-        'Acheron': {
-            name: 'Acheron',
+        'Kafka': {
+            name: 'Kafka',
             images: [
-                '/assets/post-generator/characters/hsr/kiana/kiana_1.webp',
-                '/assets/post-generator/characters/hsr/kiana/kiana_2.webp',
-                '/assets/post-generator/characters/hsr/kiana/kiana_3.webp',
+                '/assets/post-generator/characters/hsr/kafka/kafka_1.webp',
+                '/assets/post-generator/characters/hsr/kafka/kafka_2.webp',
+                '/assets/post-generator/characters/hsr/kafka/kafka_3.webp',
             ],
         },
         
     },
     'zzz': {
-        'Miyabi': {
-            name: 'Miyabi',
+        'Jane Doe': {
+            name: 'Jane Doe',
             images: [
-                '/assets/post-generator/characters/zzz/march_7th/march_7th_1.webp',
-                '/assets/post-generator/characters/zzz/march_7th/march_7th_2.webp',
-                '/assets/post-generator/characters/zzz/march_7th/march_7th_3.webp',
+                '/assets/post-generator/characters/zzz/jane_doe/jane_doe_1.webp',
+                '/assets/post-generator/characters/zzz/jane_doe/jane_doe_2.webp',
+                '/assets/post-generator/characters/zzz/jane_doe/jane_doe_3.webp',
             ],
         },
     },
