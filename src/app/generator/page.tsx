@@ -3,7 +3,6 @@
 import { useState } from "react"
 
 import PostForm from "@/features/post-generator/components/PostForm"
-import PostCanvas from "@/features/post-generator/components/PostCanvas";
 import PostPreview from "@/features/post-generator/components/PostPreview";
 
 export default function PostGeneratorPage () {
@@ -16,7 +15,6 @@ export default function PostGeneratorPage () {
                 <PostForm />
 
                 <div className="flex flex-col items-center justify-center bg-accent/25">
-                    <PostCanvas onImageGenerated={setImageUrl} />
                     <PostPreview imageUrl={imageUrl} />
                 </div>
             </div>

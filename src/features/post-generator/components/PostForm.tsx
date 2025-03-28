@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Characters } from '../data/characters'; // Adjust path
 import DownloadButton from '@/components/generator/DownloadButton';
 import PostCanvas from './PostCanvas';
@@ -14,8 +14,8 @@ const PostForm: React.FC = () => {
     const [netPrice, setNetPrice] = useState('');
     const [isStarterAccount, setIsStarterAccount] = useState(false);
     const [description, setDescription] = useState('');
-    const [imageUrl, setImageUrl] = useState<string | null>(null); // State to hold the generated image URL
-    const [isGenerating, setIsGenerating] = useState(false); // Optional: for loading state
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // ... (Keep existing handlers: handleGameChange, handleCharacterChange, etc.) ...
     const handleGameChange = (game: string) => {
@@ -75,13 +75,12 @@ const PostForm: React.FC = () => {
     // Callback function to receive the generated image URL
     const handleImageGenerated = (url: string | null) => {
         setImageUrl(url);
-        setIsGenerating(false); // Generation finished
-         console.log("Image Updated:", url ? url.substring(0, 100) + '...' : 'Error/Empty'); // Log truncated URL
+        setIsGenerating(false);
     };
 
     // Trigger generation state when relevant inputs change
     // Use a debounce mechanism here in a real app to avoid excessive re-renders
-    React.useEffect(() => {
+    useEffect(() => {
         setIsGenerating(true);
         // Simple immediate trigger; consider debounce for performance
     }, [selectedPostType, selectedGames, selectedCharacters /*, other relevant state */]);
@@ -89,9 +88,8 @@ const PostForm: React.FC = () => {
 
     return (
         <div style={{ display: 'flex', gap: '20px' }}> {/* Basic layout */}
-            <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+            <form onSubmit={(e) => e.preventDefault()} style={{ flex: 1 }}>
                 <h2>Configure Post</h2>
-
                 {/* Post Type Selection */}
                 <div>
                     <label>Post Type:</label>
@@ -207,6 +205,13 @@ const PostForm: React.FC = () => {
                 <DownloadButton imageUrl={imageUrl} />
                 {isGenerating && <p>Generating preview...</p>}
             </form>
+
+            <PostCanvas 
+                postType={selectedPostType}
+                selectedGames={selectedGames}
+                selectedCharacters={selectedCharacters}
+                onImageGenerated={handleImageGenerated}
+            />
         </div>
     );
 };

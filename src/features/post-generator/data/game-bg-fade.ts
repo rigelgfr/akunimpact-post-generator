@@ -5,7 +5,7 @@ export interface GameImageData {
 
 export const GameBackground: Record<string, Record<string, GameImageData>> = {
     single: {
-        gi: {
+        genshin: {
             type: 'gi',
             background: 'assets/post-generator/game_bg/single/gi_bg.webp'
         },
@@ -19,11 +19,11 @@ export const GameBackground: Record<string, Record<string, GameImageData>> = {
         }
     },
     double: {
-        gi_hsr: {
+        genshin_hsr: {
             type: 'gi_hsr',
             background: 'assets/post-generator/game_bg/double/gi_hsr_bg.webp'
         },
-        gi_zzz: {
+        genshin_zzz: {
             type: 'gi_zzz',
             background: 'assets/post-generator/game_bg/double/gi_zzz_bg.webp'
         },
@@ -42,7 +42,7 @@ export const GameBackground: Record<string, Record<string, GameImageData>> = {
 
 export const GameFade: Record<string, Record<string, GameImageData>> = {
     single: {
-        gi: {
+        genshin: {
             type: 'gi',
             background: 'assets/post-generator/game_fade/single/gi_fade.webp'
         },
@@ -56,11 +56,11 @@ export const GameFade: Record<string, Record<string, GameImageData>> = {
         }
     },
     double: {
-        gi_hsr: {
+        genshin_hsr: {
             type: 'gi_hsr',
             background: 'assets/post-generator/game_fade/double/gi_hsr_fade.webp'
         },
-        gi_zzz: {
+        genshin_zzz: {
             type: 'gi_zzz',
             background: 'assets/post-generator/game_fade/double/gi_zzz_fade.webp'
         },
