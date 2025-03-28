@@ -13,6 +13,14 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/genshin/hu_tao/hu_tao_3.webp',
             ],
         },
+        'Raiden Shogun': {
+            name: 'Raiden Shogun',
+            images: [
+                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_1.webp',
+                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_2.webp',
+                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_3.webp',
+            ],
+        }
     },
     'hsr': {
         'Kafka': {
