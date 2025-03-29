@@ -9,16 +9,12 @@ export default function PostGeneratorPage () {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
 
     return (
-        <div>
-            <h1>Post Generator</h1>
-            <div className="flex items-center justify-center mt-4">
-                <PostForm />
+        <div className="flex items-center justify-center mt-4">
+            <PostForm />
 
-                <div className="flex flex-col items-center justify-center bg-accent/25">
-                    <PostPreview imageUrl={imageUrl} />
-                </div>
+            <div className="flex flex-col items-center justify-center bg-accent/25">
+                <PostPreview imageUrl={imageUrl} />
             </div>
-            
         </div>
     )
 }

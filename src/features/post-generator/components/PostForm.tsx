@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Characters } from '../data/characters'; // Adjust path
+import { Characters } from '../data/characters';
 import DownloadButton from '@/components/generator/DownloadButton';
-import PostCanvas from './PostCanvas';
+import LayeredPostCanvas from './LayeredPostCanvas';
 
 const PostForm: React.FC = () => {
-    // ... (Keep existing state variables: selectedPostType, code, etc.) ...
     const [selectedPostType, setSelectedPostType] = useState<string>('New');
     const [code, setCode] = useState('');
     const [selectedGames, setSelectedGames] = useState<string[]>([]);
@@ -17,7 +16,6 @@ const PostForm: React.FC = () => {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    // ... (Keep existing handlers: handleGameChange, handleCharacterChange, etc.) ...
     const handleGameChange = (game: string) => {
         const isCurrentlySelected = selectedGames.includes(game);
         let newSelectedGames: string[];
@@ -50,26 +48,9 @@ const PostForm: React.FC = () => {
         }));
     };
 
-     const handleNetPriceChange = (value: string) => {
-        const cleanedValue = value.replace(/\D/g, '');
-        setNetPrice(cleanedValue ? `${cleanedValue}K` : '');
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // You might want to trigger final generation here if needed,
-        // or just log the state which is already used for the preview
-        console.log("Form Submitted State:", {
-            postType: selectedPostType,
-            code,
-            selectedGames,
-            selectedCharacters,
-            netPrice,
-            isStarterAccount,
-            description,
-            generatedImageUrl: imageUrl // Log the generated URL too
-        });
-        // Potentially trigger download using the imageUrl if ready
+    const handleNetPriceChange = (value: string) => {
+        const cleanedValue = value.replace(/\D/g, ''); // Remove non-numeric characters
+        setNetPrice(cleanedValue); // Store only numeric part
     };
 
     // Callback function to receive the generated image URL
@@ -79,15 +60,12 @@ const PostForm: React.FC = () => {
     };
 
     // Trigger generation state when relevant inputs change
-    // Use a debounce mechanism here in a real app to avoid excessive re-renders
     useEffect(() => {
         setIsGenerating(true);
-        // Simple immediate trigger; consider debounce for performance
-    }, [selectedPostType, selectedGames, selectedCharacters /*, other relevant state */]);
-
+    }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount]);
 
     return (
-        <div style={{ display: 'flex', gap: '20px' }}> {/* Basic layout */}
+        <div style={{ display: 'flex', gap: '20px' }}>
             <form onSubmit={(e) => e.preventDefault()} style={{ flex: 1 }}>
                 <h2>Configure Post</h2>
                 {/* Post Type Selection */}
@@ -132,9 +110,9 @@ const PostForm: React.FC = () => {
                                     type="checkbox"
                                     checked={selectedGames.includes(game)}
                                     onChange={() => handleGameChange(game)}
-                                    disabled={!selectedGames.includes(game) && selectedGames.length >= 3} // Disable adding more than 3
+                                    disabled={!selectedGames.includes(game) && selectedGames.length >= 3}
                                 />
-                                {game.toUpperCase()} {/* Display game names consistently */}
+                                {game.toUpperCase()}
                             </label>
                         ))}
                     </div>
@@ -160,18 +138,20 @@ const PostForm: React.FC = () => {
                 ))}
 
                 {/* Net Price */}
-                 <div>
+                <div>
                     <label>
                         Net Price:
-                        <input
-                            type="text"
-                            value={netPrice}
-                            onChange={(e) => handleNetPriceChange(e.target.value)}
-                            placeholder="e.g., 50, 1500"
-                             style={{ marginLeft: '5px' }}
-                        />
+                        <div className="inline-flex items-center">
+                            <input
+                                type="text"
+                                value={netPrice}
+                                onChange={(e) => handleNetPriceChange(e.target.value)}
+                                style={{ width: '60px', textAlign: 'right' }} // Fixed width for "xxxx"
+                            />
+                            <span className='ml-1'>K</span>
+                        </div>
                     </label>
-                 </div>
+                </div>
 
                 {/* Starter Account Checkbox */}
                 <div>
@@ -184,7 +164,6 @@ const PostForm: React.FC = () => {
                         Starter Account
                     </label>
                 </div>
-
 
                 {/* Description */}
                 <div>
@@ -201,15 +180,18 @@ const PostForm: React.FC = () => {
                     </label>
                 </div>
 
-                {/* Download Button - Disabled while generating or if no image */}
+                {/* Download Button */}
                 <DownloadButton imageUrl={imageUrl} />
                 {isGenerating && <p>Generating preview...</p>}
             </form>
 
-            <PostCanvas 
+            {/* Using the new layered canvas component */}
+            <LayeredPostCanvas 
                 postType={selectedPostType}
                 selectedGames={selectedGames}
                 selectedCharacters={selectedCharacters}
+                netPrice={netPrice}
+                isStarterAccount={isStarterAccount}
                 onImageGenerated={handleImageGenerated}
             />
         </div>

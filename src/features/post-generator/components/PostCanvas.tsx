@@ -180,7 +180,7 @@ const PostCanvas: React.FC<PostCanvasProps> = ({
     renderCanvas();
   }, [postType, selectedGames, selectedCharacters, characterImageIndex, onImageGenerated]);
 
-  return <canvas ref={canvasRef} className="" />;
+  return <canvas ref={canvasRef} className="w-[540px] h-[675px]" />;
 };
 
 export default PostCanvas;
