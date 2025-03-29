@@ -1,22 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getCharacterImageIndex } from "../utils/character-image-index";
-import { renderCanvasLayers } from "../utils/canvas-utils";
+import { renderCanvasThumbnailLayers } from "../utils/canvas-utils";
 
 export interface PostCanvasProps {
     postType: string;
+    postCode: string;
     selectedGames: string[];
     selectedCharacters: { [key: string]: string };
     netPrice: string;
     isStarterAccount: boolean;
+    postDescription: string;
     onImageGenerated: (imageUrl: string | null) => void;
 }
 
 const LayeredPostCanvas: React.FC<PostCanvasProps> = ({
   postType,
+  postCode,
   selectedGames,
   selectedCharacters,
   netPrice,
   isStarterAccount,
+  postDescription,
   onImageGenerated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,16 +41,18 @@ const LayeredPostCanvas: React.FC<PostCanvasProps> = ({
     setIsRendering(true);
 
     // Start rendering process
-    renderCanvasLayers({
+    renderCanvasThumbnailLayers({
       canvas,
       canvasWidth,
       canvasHeight, 
       postType,
+      postCode,
       selectedGames,
       selectedCharacters,
+      getCharacterImageIndex: () => getCharacterImageIndex(selectedGames.length),
       netPrice,
       isStarterAccount,
-      getCharacterImageIndex: () => getCharacterImageIndex(selectedGames.length),
+      postDescription,
       currentRenderID,
       setCurrentRenderID: (id) => { currentRenderID = id; },
       onComplete: (imageUrl) => {
@@ -59,7 +65,7 @@ const LayeredPostCanvas: React.FC<PostCanvasProps> = ({
     return () => {
       currentRenderID = -1; // Invalidate the current render ID to cancel any ongoing rendering
     };
-  }, [postType, selectedGames, selectedCharacters, netPrice, isStarterAccount, onImageGenerated]);
+  }, [postType, postCode, selectedGames, selectedCharacters, netPrice, isStarterAccount, postDescription, onImageGenerated]);
 
   return (
     <div className="relative" style={{ width: canvasWidth / 2, height: canvasHeight / 2 }}>

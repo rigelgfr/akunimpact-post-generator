@@ -4,17 +4,35 @@ import { useState, useEffect } from 'react';
 import { Characters } from '../data/characters';
 import DownloadButton from '@/components/generator/DownloadButton';
 import LayeredPostCanvas from './LayeredPostCanvas';
+import { useDebounce } from '@/hooks/useDebounce'; // Import our new hook
 
 const PostForm: React.FC = () => {
     const [selectedPostType, setSelectedPostType] = useState<string>('New');
-    const [code, setCode] = useState('');
+    
+    // For code input
+    const [codeInput, setCodeInput] = useState('');
+    const code = useDebounce(codeInput, 500); // 2 second debounce
+    
     const [selectedGames, setSelectedGames] = useState<string[]>([]);
     const [selectedCharacters, setSelectedCharacters] = useState<{ [key: string]: string }>({});
-    const [netPrice, setNetPrice] = useState('');
+    
+    // For net price input
+    const [netPriceInput, setNetPriceInput] = useState('');
+    const netPrice = useDebounce(netPriceInput, 500); // 2 second debounce
+    
     const [isStarterAccount, setIsStarterAccount] = useState(false);
-    const [description, setDescription] = useState('');
+    
+    // For description input
+    const [descriptionInput, setDescriptionInput] = useState('');
+    const description = useDebounce(descriptionInput, 1000); // 2 second debounce
+    
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleCodeChange = (value: string) => {
+        const cleanedValue = value.replace(/\D/g, ''); // Remove non-numeric characters
+        setCodeInput(cleanedValue); // Update input immediately, debounce handled by the hook
+    }
 
     const handleGameChange = (game: string) => {
         const isCurrentlySelected = selectedGames.includes(game);
@@ -50,7 +68,11 @@ const PostForm: React.FC = () => {
 
     const handleNetPriceChange = (value: string) => {
         const cleanedValue = value.replace(/\D/g, ''); // Remove non-numeric characters
-        setNetPrice(cleanedValue); // Store only numeric part
+        setNetPriceInput(cleanedValue); // Update input immediately, debounce handled by the hook
+    };
+
+    const handleDescriptionChange = (value: string) => {
+        setDescriptionInput(value); // Update input immediately, debounce handled by the hook
     };
 
     // Callback function to receive the generated image URL
@@ -62,7 +84,7 @@ const PostForm: React.FC = () => {
     // Trigger generation state when relevant inputs change
     useEffect(() => {
         setIsGenerating(true);
-    }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount]);
+    }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount, description, code]);
 
     return (
         <div style={{ display: 'flex', gap: '20px' }}>
@@ -91,12 +113,16 @@ const PostForm: React.FC = () => {
                  <div>
                     <label>
                         Code:
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            style={{ marginLeft: '5px' }}
-                         />
+                        <div className='inline-flex items-center gap-1'>
+                            <span className='ml-1'>AAA</span>
+                            <input
+                                type="text"
+                                value={codeInput}
+                                onChange={(e) => handleCodeChange(e.target.value)}
+                                className='w-10 text-left'
+                            />
+                        </div>
+                        
                     </label>
                 </div>
 
@@ -144,9 +170,9 @@ const PostForm: React.FC = () => {
                         <div className="inline-flex items-center">
                             <input
                                 type="text"
-                                value={netPrice}
+                                value={netPriceInput}
                                 onChange={(e) => handleNetPriceChange(e.target.value)}
-                                style={{ width: '60px', textAlign: 'right' }} // Fixed width for "xxxx"
+                                className='w-10 text-right'
                             />
                             <span className='ml-1'>K</span>
                         </div>
@@ -165,17 +191,17 @@ const PostForm: React.FC = () => {
                     </label>
                 </div>
 
-                {/* Description */}
+                {/* Description, should be text area */}
                 <div>
                     <label>
                         Description:
                         <input
                             type="text"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value.slice(0, 30))}
-                            maxLength={30}
-                            placeholder="Max 30 chars"
-                            style={{ marginLeft: '5px', width: '200px' }}
+                            value={descriptionInput}
+                            onChange={(e) => handleDescriptionChange(e.target.value)}
+                            maxLength={160}
+                            placeholder="Max 160 chars"
+                            className='ml-1 w-20'
                         />
                     </label>
                 </div>
@@ -188,10 +214,12 @@ const PostForm: React.FC = () => {
             {/* Using the new layered canvas component */}
             <LayeredPostCanvas 
                 postType={selectedPostType}
+                postCode={'AAA'+code}
                 selectedGames={selectedGames}
                 selectedCharacters={selectedCharacters}
                 netPrice={netPrice}
                 isStarterAccount={isStarterAccount}
+                postDescription={description.toUpperCase()}
                 onImageGenerated={handleImageGenerated}
             />
         </div>
