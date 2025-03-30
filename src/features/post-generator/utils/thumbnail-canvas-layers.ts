@@ -224,7 +224,7 @@ try {
     
     // Position the text
     const textX = canvasWidth / 2;
-    const textY = 1050;
+    const textY = 1055;
     
     // --- Apply Advanced Neon Glow Effect ---
     // First measure the text to calculate total width with letter spacing
