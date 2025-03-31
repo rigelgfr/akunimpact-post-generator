@@ -13,16 +13,19 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
+        // Use direct style overrides for consistent appearance
+        style: {
+          backgroundColor: "white",  // White background
+          color: "var(--ai-cyan)",   // Text color as ai-cyan
+          borderColor: "var(--ai-cyan)",
+          borderWidth: "1px",
+        },
+        // Add additional class overrides for specific elements
         classNames: {
-          toast: "group toast group-[.toaster]:bg-ai-cyan group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-          // Add custom styles here
-          // You can make the background darker with:
-          default: "group-[.toaster]:bg-ai-cyan group-[.toaster]:text-ai-cyan group-[.toaster]:text-ai-cyan group-[.toaster]:border-ai-cyan",
-          // For a colored background:
-          // default: "group-[.toaster]:bg-blue-950 group-[.toaster]:text-blue-50 group-[.toaster]:border-blue-900",
+          title: "!text-ai-cyan", // Force text color with !important
+          description: "!text-ai-cyan", // Force text color with !important
+          actionButton: "!bg-ai-cyan !text-white hover:!bg-ai-cyan/80",
+          cancelButton: "!bg-gray-200 !text-gray-700",
         },
       }}
       {...props}
