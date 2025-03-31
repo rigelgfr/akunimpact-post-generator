@@ -14,7 +14,19 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const PostForm: React.FC = () => {
+interface PostFormProps {
+  onFormChange?: (
+    postType: string,
+    postCode: string,
+    selectedGames: string[],
+    selectedCharacters: { [key: string]: string },
+    netPrice: string,
+    isStarterAccount: boolean,
+    postDescription: string
+  ) => void;
+}
+
+const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
   const [selectedPostType, setSelectedPostType] = useState<string>("New")
 
   // For code input
@@ -39,6 +51,29 @@ const PostForm: React.FC = () => {
 
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+
+  useEffect(() => {
+    if (onFormChange) {
+      onFormChange(
+        selectedPostType,
+        "AAA" + codeInput,
+        selectedGames,
+        selectedCharacters,
+        netPriceInput,
+        isStarterAccount,
+        description
+      );
+    }
+  }, [
+    selectedPostType,
+    codeInput,
+    selectedGames,
+    selectedCharacters,
+    netPriceInput,
+    isStarterAccount,
+    description,
+    onFormChange
+  ]);
 
   const handleCodeChange = (value: string) => {
     const cleanedValue = value.replace(/\D/g, "") // Remove non-numeric characters
@@ -89,9 +124,9 @@ const PostForm: React.FC = () => {
 
   // Callback function to receive the generated image URL
   const handleImageGenerated = (url: string | null) => {
-    setImageUrl(url)
-    setIsGenerating(false)
-  }
+    setImageUrl(url);
+    setIsGenerating(false);
+  };
 
   // Trigger generation only when debounced values change
   useEffect(() => {
@@ -122,7 +157,7 @@ const PostForm: React.FC = () => {
   return (
     <div className="flex flex-col md:flex-row w-full gap-0">
       {/* Form Section */}
-      <div className="w-full md:w-1/4 bg-white p-6 border-r rounded-r-3xl border-gray-200 shadow-lg h-screen overflow-y-auto">
+      <div className=" bg-white p-6 border-r rounded-r-3xl border-gray-200 shadow-lg h-screen overflow-y-auto">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           <h2 className="text-base font-semibold text-gray-800 mb-3">Configure Post</h2>
   
@@ -280,22 +315,6 @@ const PostForm: React.FC = () => {
             {imageUrl && <DownloadButton imageUrl={imageUrl} postCode={"AAA" + code} />}
           </div>
         </form>
-      </div>
-  
-      {/* Canvas Preview Section */}
-      <div className="w-full md:w-3/4 flex items-center justify-center h-screen">
-        <div className="p-8 flex items-center justify-center">
-          <LayeredThumbnailCanvas
-            postType={selectedPostType}
-            postCode={"AAA" + code}
-            selectedGames={selectedGames}
-            selectedCharacters={selectedCharacters}
-            netPrice={netPrice}
-            isStarterAccount={isStarterAccount}
-            postDescription={renderingDescription.toUpperCase()}
-            onImageGenerated={handleImageGenerated}
-          />
-        </div>
       </div>
     </div>
   )

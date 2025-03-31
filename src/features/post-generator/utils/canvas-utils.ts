@@ -1,5 +1,6 @@
 import { renderGameBackground, renderCharacters, renderGameFade, renderOverlay, renderFooter, renderPostCode, renderPriceText, renderPostDescription } from './thumbnail-canvas-layers';
 import { preloadImage } from './image-utils';
+import { renderDetailOverlay, renderUserImages } from './details-canvas-layers';
 
 export interface CanvasThumbnailRenderProps {
     canvas: HTMLCanvasElement;
@@ -108,6 +109,83 @@ export const renderCanvasThumbnailLayers = async ({
     }
   } catch (error) {
     console.error("Error rendering canvas:", error);
+    if (currentRenderID === renderID) {
+      onComplete(null);
+    }
+  }
+};
+
+export interface RenderDetailLayersProps {
+  canvas: HTMLCanvasElement;
+  canvasWidth: number;
+  canvasHeight: number;
+  postType: string;
+  overlayType: "char" | "item" | "const" | "info" | "other";
+  images: string[];
+  currentRenderID: number;
+  setCurrentRenderID: (id: number) => void;
+  onComplete: (imageUrl: string | null) => void;
+}
+
+export const renderDetailLayers = async ({
+  canvas,
+  canvasWidth,
+  canvasHeight,
+  postType,
+  overlayType,
+  images,
+  currentRenderID,
+  setCurrentRenderID,
+  onComplete,
+}: RenderDetailLayersProps) => {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const renderID = Date.now();
+  setCurrentRenderID(renderID);
+
+  // Create a buffer canvas for double buffering
+  const buffer = document.createElement('canvas');
+  buffer.width = canvasWidth;
+  buffer.height = canvasHeight;
+  const bufferCtx = buffer.getContext('2d');
+  
+  if (!bufferCtx) return;
+  
+  try {
+    // Clear buffer
+    bufferCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    
+    // Layer 1: Background (fixed)
+    const bgImage = await preloadImage("/assets/post-generator/background/details_bg.webp");
+    if (currentRenderID !== renderID) return; // Check if we should continue rendering
+    bufferCtx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
+    
+    // Layer 2: Overlay based on type
+    await renderDetailOverlay(bufferCtx, overlayType, canvasWidth, canvasHeight, renderID, currentRenderID);
+    if (currentRenderID !== renderID) return;
+    
+    // Layer 3: User Images
+    if (images && images.length > 0) {
+      await renderUserImages(bufferCtx, images, canvasWidth, canvasHeight, renderID, currentRenderID);
+      if (currentRenderID !== renderID) return;
+    }
+    
+    // Layer 4: Footer (same as thumbnail)
+    await renderFooter(bufferCtx, postType, canvasWidth, canvasHeight, renderID, currentRenderID);
+    if (currentRenderID !== renderID) return;
+    
+    // Copy from buffer to main canvas (only when everything is ready)
+    if (currentRenderID === renderID) {
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.drawImage(buffer, 0, 0);
+      
+      // Generate final image URL
+      const finalImageUrl = canvas.toDataURL("image/png");
+      onComplete(finalImageUrl);
+    }
+  } catch (error) {
+    console.error("Error rendering detail canvas:", error);
     if (currentRenderID === renderID) {
       onComplete(null);
     }

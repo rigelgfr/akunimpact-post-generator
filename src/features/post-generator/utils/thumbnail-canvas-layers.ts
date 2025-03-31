@@ -7,7 +7,6 @@ import { Footer } from "../data/footer";
 import { calculateFinalPrice } from "./markup";
 import { Colors } from "@/data/colors";
 
-
 export async function renderPostCode(
     ctx: CanvasRenderingContext2D,
     code: string,
