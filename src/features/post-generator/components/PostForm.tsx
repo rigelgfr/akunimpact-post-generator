@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Characters } from "../data/characters"
 import DownloadButton from "@/components/generator/DownloadButton"
-import LayeredPostCanvas from "./LayeredPostCanvas"
+import LayeredThumbnailCanvas from "./LayeredThumbnailCanvas"
 import { useDebounce } from "@/hooks/useDebounce"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -285,7 +285,7 @@ const PostForm: React.FC = () => {
       {/* Canvas Preview Section */}
       <div className="w-full md:w-3/4 flex items-center justify-center h-screen">
         <div className="p-8 flex items-center justify-center">
-          <LayeredPostCanvas
+          <LayeredThumbnailCanvas
             postType={selectedPostType}
             postCode={"AAA" + code}
             selectedGames={selectedGames}

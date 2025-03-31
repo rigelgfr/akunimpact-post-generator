@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getCharacterImageIndex } from "../utils/character-image-index";
-import { renderCanvasThumbnailLayers } from "../utils/canvas-utils";
+import { renderCanvasThumbnailLayers } from "../utils/thumbnail-canvas-utils";
 
-export interface PostCanvasProps {
+export interface ThumbnailCanvasProps {
     postType: string;
     postCode: string;
     selectedGames: string[];
@@ -13,7 +13,7 @@ export interface PostCanvasProps {
     onImageGenerated: (imageUrl: string | null) => void;
 }
 
-const LayeredPostCanvas: React.FC<PostCanvasProps> = ({
+const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
   postType,
   postCode,
   selectedGames,
@@ -88,4 +88,4 @@ const LayeredPostCanvas: React.FC<PostCanvasProps> = ({
   );
 };
 
-export default LayeredPostCanvas;
+export default LayeredThumbnailCanvas;
