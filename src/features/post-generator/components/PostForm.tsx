@@ -30,9 +30,12 @@ const PostForm: React.FC = () => {
 
   const [isStarterAccount, setIsStarterAccount] = useState(false)
 
-  // For description input
+  // For description input - separate immediate UI value from debounced render value
   const [descriptionInput, setDescriptionInput] = useState("")
   const description = useDebounce(descriptionInput, 1000)
+
+  // Track what's actually being rendered to avoid unnecessary re-renders
+  const [renderingDescription, setRenderingDescription] = useState("")
 
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -80,6 +83,7 @@ const PostForm: React.FC = () => {
   }
 
   const handleDescriptionChange = (value: string) => {
+    // Update the display value immediately for responsive typing
     setDescriptionInput(value)
   }
 
@@ -89,10 +93,31 @@ const PostForm: React.FC = () => {
     setIsGenerating(false)
   }
 
-  // Trigger generation state when relevant inputs change
+  // Trigger generation only when debounced values change
+  useEffect(() => {
+    // Only trigger re-rendering if the debounced description has actually changed
+    if (description !== renderingDescription) {
+      setRenderingDescription(description)
+      setIsGenerating(true)
+    }
+  }, [description, renderingDescription])
+
+  // Trigger generation for other input changes
   useEffect(() => {
     setIsGenerating(true)
-  }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount, description, code])
+  }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount, code])
+
+  // Calculate line and character limits for the textarea
+  const MAX_CHARS_PER_LINE = 45
+  const MAX_LINES = 4
+  const MAX_TOTAL_CHARS = 180
+
+  // Count lines that exceed the character limit
+  const lines = descriptionInput.split('\n')
+  const lineWarnings = lines.map(line => line.length > MAX_CHARS_PER_LINE)
+  const hasLineWarning = lineWarnings.some(warning => warning)
+  const lineCount = lines.length
+  const lineCountWarning = lineCount > MAX_LINES
 
   return (
     <div className="flex flex-col md:flex-row w-full gap-0">
@@ -220,16 +245,35 @@ const PostForm: React.FC = () => {
               <Textarea
                 value={descriptionInput}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
-                maxLength={160}
-                placeholder="Max 160 chars"
-                rows={2}
-                className="min-h-[60px] text-xs resize-none border-input focus:border-ai-cyan focus-visible:ring-ai-cyan focus-visible:ring-1"
+                maxLength={MAX_TOTAL_CHARS}
+                placeholder={`Max ${MAX_CHARS_PER_LINE} chars per line, ${MAX_LINES} lines max`}
+                rows={4}
+                className={`min-h-[100px] text-xs resize-none border-input focus:border-ai-cyan focus-visible:ring-ai-cyan focus-visible:ring-1 ${
+                  hasLineWarning || lineCountWarning ? 'border-yellow-500' : ''
+                }`}
               />
-              <div className="absolute bottom-1 right-2 text-[10px] text-muted-foreground">
-                {descriptionInput.length}/160
+              <div className={`absolute bottom-1 right-2 text-[10px] ${
+                hasLineWarning || lineCountWarning ? 'text-yellow-600' : 'text-muted-foreground'
+              }`}>
+                {descriptionInput.length}/{MAX_TOTAL_CHARS} | {lineCount}/{MAX_LINES} lines
+                {lineCountWarning && " (too many lines)"}
               </div>
+              
+              {/* Line length warnings */}
+              {hasLineWarning && (
+                <div className="absolute top-1 right-2 text-[10px] text-yellow-600">
+                  Some lines exceed {MAX_CHARS_PER_LINE} characters
+                </div>
+              )}
             </div>
           </div>
+  
+          {/* Canvas is processing indicator */}
+          {isGenerating && (
+            <div className="text-xs text-muted-foreground">
+              Processing changes...
+            </div>
+          )}
   
           {/* Download Button */}
           <div className="pt-2">
@@ -248,7 +292,7 @@ const PostForm: React.FC = () => {
             selectedCharacters={selectedCharacters}
             netPrice={netPrice}
             isStarterAccount={isStarterAccount}
-            postDescription={description.toUpperCase()}
+            postDescription={renderingDescription.toUpperCase()}
             onImageGenerated={handleImageGenerated}
           />
         </div>
@@ -258,4 +302,3 @@ const PostForm: React.FC = () => {
 }
 
 export default PostForm
-

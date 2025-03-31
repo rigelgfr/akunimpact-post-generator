@@ -310,112 +310,117 @@ try {
 }
   
 export async function renderPostDescription(
-ctx: CanvasRenderingContext2D,
-description: string,
-canvasWidth: number,
-canvasHeight: number,
-renderID: number,
-currentRenderID: number
-) {
-if (currentRenderID !== renderID) return;
-
-try {
-    // Set fixed dimensions for the text area
-    const textAreaWidth = 900; // Fixed width in pixels
-    const textAreaHeight = 160; // Fixed height in pixels
-    const maxCharCount = 160; // Estimated max character count
-    
-    // Truncate description if it exceeds max character count
-    const truncatedDescription = description.length > maxCharCount 
-    ? description.substring(0, maxCharCount - 3) + '...' 
-    : description;
-
-    // Load the font (using system Arial Bold instead of Arial Unicode Bold)
-    const fontFamily = 'Arial';
-    const fontSize = 30;
-    ctx.font = `bold ${fontSize}px ${fontFamily}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // Position the text - place it below the price text
-    const textX = canvasWidth / 2;
-    const baseY = 1150; // Base Y position for the first line (fixed)
-    const lineHeight = fontSize * 1.2; // Standard line height
-
-    // --- Apply Similar Neon Glow Effect ---
-    // First measure the text to calculate word wrapping if needed
-    const words = truncatedDescription.split(' ');
-    const lines = [];
-    let currentLine = '';
-    
-    // Simple word wrapping
-    words.forEach(word => {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const metrics = ctx.measureText(testLine);
-    
-    if (metrics.width > textAreaWidth) {
-        lines.push(currentLine);
-        currentLine = word;
-    } else {
-        currentLine = testLine;
+    ctx: CanvasRenderingContext2D,
+    description: string,
+    canvasWidth: number,
+    canvasHeight: number,
+    renderID: number,
+    currentRenderID: number
+  ) {
+    if (currentRenderID !== renderID) return;
+  
+    try {
+      const maxCharsPerLine = 45; // Maximum characters per line
+      const maxLines = 4; // Maximum number of lines to display
+      
+      // Load the font (using system Arial Bold instead of Arial Unicode Bold)
+      const fontFamily = 'Arial';
+      const fontSize = 30;
+      ctx.font = `bold ${fontSize}px ${fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Position the text - place it below the price text
+      const textX = canvasWidth / 2;
+      const baseY = 1140; // Base Y position for the first line (fixed)
+      const lineHeight = fontSize * 1.2; // Standard line height
+  
+      // Preserve user-entered line breaks and enforce per-line character limits
+      const userLines = description.split('\n');
+      const processedLines = [];
+      
+      // Process each user-entered line
+      for (const line of userLines) {
+        if (line.length <= maxCharsPerLine) {
+          // Line is within limit, add it as is
+          processedLines.push(line);
+        } else {
+          // Line is too long, need to split it
+          let currentLine = '';
+          const words = line.split(' ');
+          
+          for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            if (testLine.length <= maxCharsPerLine) {
+              currentLine = testLine;
+            } else {
+              processedLines.push(currentLine);
+              currentLine = word;
+            }
+          }
+          
+          if (currentLine) {
+            processedLines.push(currentLine);
+          }
+        }
+        
+        // Stop processing if we've reached the maximum number of lines
+        if (processedLines.length >= maxLines) {
+          break;
+        }
+      }
+      
+      // Limit to max number of lines
+      const displayLines = processedLines.slice(0, maxLines);
+      
+      // Function to draw text with all three glow layers
+      const drawTextWithGlow = (line: string, yPos: number) => {
+        // Layer 1: Outer glow (larger blur)
+        ctx.shadowColor = Colors["default-blue"].color;
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillText(line, textX, yPos);
+        
+        // Layer 2: Medium glow
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = Colors["default-blue"].color;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillText(line, textX, yPos);
+        
+        // Layer 3: Main text (no shadow, full opacity)
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0)';
+        ctx.fillStyle = 'white';
+        ctx.fillText(line, textX, yPos);
+      };
+      
+      // Draw each line with the first line fixed at baseY and subsequent lines flowing down
+      displayLines.forEach((line, index) => {
+        const lineY = baseY + (index * lineHeight);
+        drawTextWithGlow(line, lineY);
+      });
+  
+      // Reset shadow effects
+      ctx.shadowColor = 'rgba(0, 0, 0, 0)';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+  
+    } catch (error) {
+      console.error("Error rendering post description:", error);
+  
+      // Fallback rendering
+      if (currentRenderID === renderID) {
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+  
+        const fallbackDesc = description.length > 160 ? description.substring(0, 160) + '...' : description;
+        
+        ctx.fillText(fallbackDesc, canvasWidth / 2, 1150);
+      }
     }
-    });
-    if (currentLine) {
-    lines.push(currentLine);
-    }
-    
-    // Limit number of lines to fit in the fixed height
-    const maxLines = Math.floor(textAreaHeight / lineHeight);
-    const displayLines = lines.slice(0, maxLines);
-    
-    // Function to draw text with all three glow layers
-    const drawTextWithGlow = (line: string, yPos: number) => {
-    // Layer 1: Outer glow (larger blur)
-    ctx.shadowColor = Colors["default-blue"].color;
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-    ctx.fillText(line, textX, yPos);
-    
-    // Layer 2: Medium glow
-    ctx.shadowBlur = 5;
-    ctx.shadowColor = Colors["default-blue"].color;
-    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-    ctx.fillText(line, textX, yPos);
-    
-    // Layer 3: Main text (no shadow, full opacity)
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0)';
-    ctx.fillStyle = 'white';
-    ctx.fillText(line, textX, yPos);
-    };
-    
-    // Draw each line with the first line fixed at baseY and subsequent lines flowing down
-    displayLines.forEach((line, index) => {
-    const lineY = baseY + (index * lineHeight);
-    drawTextWithGlow(line, lineY);
-    });
-
-    // Reset shadow effects
-    ctx.shadowColor = 'rgba(0, 0, 0, 0)';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-
-} catch (error) {
-    console.error("Error rendering post description:", error);
-
-    // Fallback rendering
-    if (currentRenderID === renderID) {
-    ctx.font = 'bold 32px Arial';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const fallbackDesc = description.length > 160 ? description.substring(0, 160) + '...' : description;
-    
-    ctx.fillText(fallbackDesc, canvasWidth / 2, 1150);
-    }
-}
-}
+  }
