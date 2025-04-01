@@ -74,10 +74,6 @@ const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
         width={canvasWidth} 
         height={canvasHeight} 
         className="w-full h-full"
-        style={{ 
-          opacity: isRendering ? 0.7 : 1, // Visual feedback during rendering 
-          transition: 'opacity 0.2s ease'  // Smooth transition
-        }} 
       />
       {isRendering && (
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">

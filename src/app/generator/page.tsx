@@ -27,23 +27,7 @@ export default function PostGeneratorPage() {
         isStarterAccount: boolean,
         postDescription: string
     ) => {
-        // Check if the new data is different from current state before updating
-        setFormData(prevData => {
-        // Skip update if data hasn't changed
-        if (
-            prevData.postType === postType &&
-            prevData.postCode === postCode &&
-            JSON.stringify(prevData.selectedGames) === JSON.stringify(selectedGames) &&
-            JSON.stringify(prevData.selectedCharacters) === JSON.stringify(selectedCharacters) &&
-            prevData.netPrice === netPrice &&
-            prevData.isStarterAccount === isStarterAccount &&
-            prevData.postDescription === postDescription
-        ) {
-            return prevData; // Return previous state to avoid re-render
-        }
-        
-        // Only update if something changed
-        return {
+        setFormData({
             postType,
             postCode,
             selectedGames,
@@ -51,7 +35,6 @@ export default function PostGeneratorPage() {
             netPrice,
             isStarterAccount,
             postDescription
-        };
         });
     };
 
@@ -60,24 +43,28 @@ export default function PostGeneratorPage() {
     };
 
     return (
-        <main className="h-screen bg-canva-gray">
-        <div className="flex h-full">
-            <PostForm 
-            onFormChange={handleFormChange} 
-            imageUrl={imageUrl} // Pass imageUrl to PostForm
-            />
-            
-            <CanvasSpace 
-            postType={formData.postType}
-            postCode={formData.postCode}
-            selectedGames={formData.selectedGames}
-            selectedCharacters={formData.selectedCharacters}
-            netPrice={formData.netPrice}
-            isStarterAccount={formData.isStarterAccount}
-            postDescription={formData.postDescription}
-            onImageGenerated={handleImageGenerated} // Add this prop
-            />
-        </div>
+        <main className="h-screen bg-canva-gray overflow-hidden">
+            <div className="flex h-full">
+                {/* Form section */}
+                <PostForm 
+                    onFormChange={handleFormChange} 
+                    imageUrl={imageUrl}
+                />
+                
+                {/* Canvas section */}
+                <div className="flex-1 h-full">
+                    <CanvasSpace 
+                        postType={formData.postType}
+                        postCode={formData.postCode}
+                        selectedGames={formData.selectedGames}
+                        selectedCharacters={formData.selectedCharacters}
+                        netPrice={formData.netPrice}
+                        isStarterAccount={formData.isStarterAccount}
+                        postDescription={formData.postDescription}
+                        onImageGenerated={handleImageGenerated}
+                    />
+                </div>
+            </div>
         </main>
     )
 }

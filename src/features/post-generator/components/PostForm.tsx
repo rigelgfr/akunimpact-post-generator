@@ -137,7 +137,6 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
     netPrice, 
     isStarterAccount, 
     description,
-    // Do NOT include onFormChange in dependency array to prevent infinite loops
   ]);
 
   // Calculate line and character limits for the textarea
