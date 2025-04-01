@@ -1,5 +1,5 @@
-import { renderGameBackground, renderCharacters, renderGameFade, renderOverlay, renderFooter, renderPostCode, renderPriceText, renderPostDescription } from './thumbnail-canvas-layers';
 import { preloadImage } from './image-utils';
+import { renderGameBackground, renderCharacters, renderGameFade, renderOverlay, renderFooter, renderPostCode, renderPriceText, renderPostDescription } from './thumbnail-canvas-layers';
 import { renderDetailOverlay, renderUserImages } from './details-canvas-layers';
 
 export interface CanvasThumbnailRenderProps {
@@ -115,7 +115,7 @@ export const renderCanvasThumbnailLayers = async ({
   }
 };
 
-export interface RenderDetailLayersProps {
+export interface RenderDetailsLayersProps {
   canvas: HTMLCanvasElement;
   canvasWidth: number;
   canvasHeight: number;
@@ -127,7 +127,7 @@ export interface RenderDetailLayersProps {
   onComplete: (imageUrl: string | null) => void;
 }
 
-export const renderDetailLayers = async ({
+export const renderDetailsLayers = async ({
   canvas,
   canvasWidth,
   canvasHeight,
@@ -137,7 +137,7 @@ export const renderDetailLayers = async ({
   currentRenderID,
   setCurrentRenderID,
   onComplete,
-}: RenderDetailLayersProps) => {
+}: RenderDetailsLayersProps) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 

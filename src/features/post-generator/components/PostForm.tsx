@@ -226,7 +226,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
                     value={selectedCharacters[game] || ""}
                     onValueChange={(value) => handleCharacterChange(game, value)}
                   >
-                    <SelectTrigger className="flex-1 h-7 text-xs border-input focus:border-ai-cyan focus:ring-1 focus:ring-ai-cyan">
+                    <SelectTrigger className="flex-1 text-xs border-input focus:border-ai-cyan focus:ring-1 focus:ring-ai-cyan">
                       <SelectValue placeholder="Select a Character" />
                     </SelectTrigger>
                     <SelectContent className="text-xs">

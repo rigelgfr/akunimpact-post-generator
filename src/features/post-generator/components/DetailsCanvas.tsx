@@ -1,26 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { getCharacterImageIndex } from "../utils/character-image-index";
-import { renderCanvasThumbnailLayers } from "../utils/canvas-utils";
+import { renderDetailsLayers } from "../utils/canvas-utils";
 
-export interface ThumbnailCanvasProps {
-    postType: string;
-    postCode: string;
-    selectedGames: string[];
-    selectedCharacters: { [key: string]: string };
-    netPrice: string;
-    isStarterAccount: boolean;
-    postDescription: string;
-    onImageGenerated: (imageUrl: string | null) => void;
+export interface DetailsCanvasProps {
+  postType: string;
+  overlayType: "char" | "item" | "const" | "info" | "other";
+  images: string[];
+  onImageGenerated: (imageUrl: string | null) => void;
 }
 
-const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
+const DetailsCanvas: React.FC<DetailsCanvasProps> = ({
   postType,
-  postCode,
-  selectedGames,
-  selectedCharacters,
-  netPrice,
-  isStarterAccount,
-  postDescription,
+  overlayType,
+  images,
   onImageGenerated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,18 +32,13 @@ const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
     setIsRendering(true);
 
     // Start rendering process
-    renderCanvasThumbnailLayers({
+    renderDetailsLayers({
       canvas,
       canvasWidth,
-      canvasHeight, 
+      canvasHeight,
       postType,
-      postCode,
-      selectedGames,
-      selectedCharacters,
-      getCharacterImageIndex: () => getCharacterImageIndex(selectedGames.length),
-      netPrice,
-      isStarterAccount,
-      postDescription,
+      overlayType,
+      images,
       currentRenderID,
       setCurrentRenderID: (id) => { currentRenderID = id; },
       onComplete: (imageUrl) => {
@@ -65,10 +51,10 @@ const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
     return () => {
       currentRenderID = -1; // Invalidate the current render ID to cancel any ongoing rendering
     };
-  }, [postType, postCode, selectedGames, selectedCharacters, netPrice, isStarterAccount, postDescription, onImageGenerated]);
+  }, [postType, overlayType, images, onImageGenerated]);
 
   return (
-    <div className="relative" style={{ width: canvasWidth / 2, height: canvasHeight / 2 }}>
+    <div className="relative hidden" style={{ width: canvasWidth / 2, height: canvasHeight / 2 }}>
       <canvas 
         ref={canvasRef} 
         width={canvasWidth} 
@@ -84,4 +70,4 @@ const LayeredThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
   );
 };
 
-export default LayeredThumbnailCanvas;
+export default DetailsCanvas;

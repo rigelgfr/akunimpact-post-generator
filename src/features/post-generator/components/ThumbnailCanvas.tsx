@@ -1,17 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
-import { renderDetailLayers } from "../utils/canvas-utils";
+import { getCharacterImageIndex } from "../utils/character-image-index";
+import { renderCanvasThumbnailLayers } from "../utils/canvas-utils";
 
-export interface DetailSlideCanvasProps {
-  postType: string;
-  overlayType: "char" | "item" | "const" | "info" | "other";
-  images: string[];
-  onImageGenerated: (imageUrl: string | null) => void;
+export interface ThumbnailCanvasProps {
+    postType: string;
+    postCode: string;
+    selectedGames: string[];
+    selectedCharacters: { [key: string]: string };
+    netPrice: string;
+    isStarterAccount: boolean;
+    postDescription: string;
+    onImageGenerated: (imageUrl: string | null) => void;
 }
 
-const DetailSlideCanvas: React.FC<DetailSlideCanvasProps> = ({
+const ThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
   postType,
-  overlayType,
-  images,
+  postCode,
+  selectedGames,
+  selectedCharacters,
+  netPrice,
+  isStarterAccount,
+  postDescription,
   onImageGenerated
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,13 +41,18 @@ const DetailSlideCanvas: React.FC<DetailSlideCanvasProps> = ({
     setIsRendering(true);
 
     // Start rendering process
-    renderDetailLayers({
+    renderCanvasThumbnailLayers({
       canvas,
       canvasWidth,
-      canvasHeight,
+      canvasHeight, 
       postType,
-      overlayType,
-      images,
+      postCode,
+      selectedGames,
+      selectedCharacters,
+      getCharacterImageIndex: () => getCharacterImageIndex(selectedGames.length),
+      netPrice,
+      isStarterAccount,
+      postDescription,
       currentRenderID,
       setCurrentRenderID: (id) => { currentRenderID = id; },
       onComplete: (imageUrl) => {
@@ -51,19 +65,15 @@ const DetailSlideCanvas: React.FC<DetailSlideCanvasProps> = ({
     return () => {
       currentRenderID = -1; // Invalidate the current render ID to cancel any ongoing rendering
     };
-  }, [postType, overlayType, images, onImageGenerated]);
+  }, [postType, postCode, selectedGames, selectedCharacters, netPrice, isStarterAccount, postDescription, onImageGenerated]);
 
   return (
-    <div className="relative" style={{ width: canvasWidth / 2, height: canvasHeight / 2 }}>
+    <div className="relative hidden" style={{ width: canvasWidth / 2, height: canvasHeight / 2 }}>
       <canvas 
         ref={canvasRef} 
         width={canvasWidth} 
         height={canvasHeight} 
         className="w-full h-full"
-        style={{ 
-          opacity: isRendering ? 0.7 : 1, // Visual feedback during rendering 
-          transition: 'opacity 0.2s ease'  // Smooth transition
-        }} 
       />
       {isRendering && (
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
@@ -74,4 +84,4 @@ const DetailSlideCanvas: React.FC<DetailSlideCanvasProps> = ({
   );
 };
 
-export default DetailSlideCanvas;
+export default ThumbnailCanvas;
