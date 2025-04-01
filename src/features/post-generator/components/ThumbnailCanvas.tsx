@@ -3,14 +3,14 @@ import { getCharacterImageIndex } from "../utils/character-image-index";
 import { renderCanvasThumbnailLayers } from "../utils/canvas-utils";
 
 export interface ThumbnailCanvasProps {
-    postType: string;
-    postCode: string;
-    selectedGames: string[];
-    selectedCharacters: { [key: string]: string };
-    netPrice: string;
-    isStarterAccount: boolean;
-    postDescription: string;
-    onImageGenerated: (imageUrl: string | null) => void;
+  postType: string;
+  postCode: string;
+  selectedGames: string[];
+  selectedCharacters: { [key: string]: string };
+  netPrice: string;
+  isStarterAccount: boolean;
+  postDescription: string;
+  onImageGenerated: (imageUrl: string | null) => void;
 }
 
 const ThumbnailCanvas: React.FC<ThumbnailCanvasProps> = ({
