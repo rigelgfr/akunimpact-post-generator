@@ -5,7 +5,6 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Characters } from "../data/characters"
 import DownloadButton from "@/components/generator/DownloadButton"
-import LayeredThumbnailCanvas from "./LayeredThumbnailCanvas"
 import { useDebounce } from "@/hooks/useDebounce"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -15,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface PostFormProps {
-  onFormChange?: (
+  onFormChange: (
     postType: string,
     postCode: string,
     selectedGames: string[],
@@ -24,9 +23,10 @@ interface PostFormProps {
     isStarterAccount: boolean,
     postDescription: string
   ) => void;
+  imageUrl: string | null; // Add this prop to receive imageUrl from parent
 }
 
-const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
+const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   const [selectedPostType, setSelectedPostType] = useState<string>("New")
 
   // For code input
@@ -48,32 +48,6 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
 
   // Track what's actually being rendered to avoid unnecessary re-renders
   const [renderingDescription, setRenderingDescription] = useState("")
-
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  useEffect(() => {
-    if (onFormChange) {
-      onFormChange(
-        selectedPostType,
-        "AAA" + codeInput,
-        selectedGames,
-        selectedCharacters,
-        netPriceInput,
-        isStarterAccount,
-        description
-      );
-    }
-  }, [
-    selectedPostType,
-    codeInput,
-    selectedGames,
-    selectedCharacters,
-    netPriceInput,
-    isStarterAccount,
-    description,
-    onFormChange
-  ]);
 
   const handleCodeChange = (value: string) => {
     const cleanedValue = value.replace(/\D/g, "") // Remove non-numeric characters
@@ -122,25 +96,49 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
     setDescriptionInput(value)
   }
 
-  // Callback function to receive the generated image URL
-  const handleImageGenerated = (url: string | null) => {
-    setImageUrl(url);
-    setIsGenerating(false);
-  };
-
-  // Trigger generation only when debounced values change
   useEffect(() => {
     // Only trigger re-rendering if the debounced description has actually changed
     if (description !== renderingDescription) {
       setRenderingDescription(description)
-      setIsGenerating(true)
     }
-  }, [description, renderingDescription])
+  }, [description, renderingDescription]) 
 
-  // Trigger generation for other input changes
+  // Modify the useEffect in PostForm.tsx
   useEffect(() => {
-    setIsGenerating(true)
-  }, [selectedPostType, selectedGames, selectedCharacters, netPrice, isStarterAccount, code])
+    // Only call onFormChange when dependencies actually change, not on every render
+    if (onFormChange) {
+      // Use a ref to track if it's the first render
+      const formData = {
+        postType: selectedPostType,
+        postCode: "AAA" + code,
+        selectedGames,
+        selectedCharacters,
+        netPrice,
+        isStarterAccount,
+        postDescription: description.toUpperCase()
+      };
+      
+      // Use this instead of directly calling onFormChange every time
+      onFormChange(
+        formData.postType,
+        formData.postCode,
+        formData.selectedGames,
+        formData.selectedCharacters,
+        formData.netPrice,
+        formData.isStarterAccount,
+        formData.postDescription
+      );
+    }
+  }, [
+    selectedPostType, 
+    code, 
+    selectedGames, 
+    selectedCharacters, 
+    netPrice, 
+    isStarterAccount, 
+    description,
+    // Do NOT include onFormChange in dependency array to prevent infinite loops
+  ]);
 
   // Calculate line and character limits for the textarea
   const MAX_CHARS_PER_LINE = 45
@@ -155,9 +153,9 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
   const lineCountWarning = lineCount > MAX_LINES
 
   return (
-    <div className="flex flex-col md:flex-row w-full gap-0">
+    <div className="w-1/4 h-screen">
       {/* Form Section */}
-      <div className=" bg-white p-6 border-r rounded-r-3xl border-gray-200 shadow-lg h-screen overflow-y-auto">
+      <div className="bg-white p-6 border-r rounded-r-3xl shadow-lg h-screen overflow-y-auto">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           <h2 className="text-base font-semibold text-gray-800 mb-3">Configure Post</h2>
   
@@ -302,13 +300,6 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange }) => {
               )}
             </div>
           </div>
-  
-          {/* Canvas is processing indicator */}
-          {isGenerating && (
-            <div className="text-xs text-muted-foreground">
-              Processing changes...
-            </div>
-          )}
   
           {/* Download Button */}
           <div className="pt-2">
