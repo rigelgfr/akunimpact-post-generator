@@ -57,7 +57,7 @@ export const getImageType = (img: HTMLImageElement): 'portrait-mobile' | 'landsc
   
   if (aspectRatio < 0.8) {
     return 'portrait-mobile';
-  } else if (aspectRatio >= 0.8 && aspectRatio <= 1.5) {
+  } else if (aspectRatio >= 2 && aspectRatio <= 2.4) { // Increased to capture your 2.27 mobile ratio
     return 'landscape-mobile';
   } else {
     return 'landscape-desktop';
@@ -72,6 +72,13 @@ export const validateImageSet = (images: HTMLImageElement[]): boolean => {
   
   // Check if all images are of the same type
   const allSameType = images.every(img => getImageType(img) === firstType);
+
+   // Debug: Log types and aspect ratios
+   images.forEach((img, index) => {
+    const ratio = img.width / img.height;
+    const type = getImageType(img);
+    console.log(`Image ${index}: Type = ${type}, Aspect Ratio = ${ratio}`);
+  });
   
   // Check if number of images is valid for the type
   if (firstType === 'portrait-mobile' && images.length > 2) {

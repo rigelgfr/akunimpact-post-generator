@@ -70,33 +70,68 @@ const renderLandscapeMobileImages = (
   topOffset: number
 ) => {
   const count = images.length;
-  const padding = 10; // Padding between images
   
-  // Calculate height per image (with padding between)
-  const totalPaddingHeight = (count - 1) * padding;
-  const heightPerImage = (availableHeight - totalPaddingHeight) / count;
+  // Define an interface for the dimensions
+  interface ImageDimension {
+    width: number;
+    height: number;
+  }
   
-  images.forEach((img, index) => {
+  // First, calculate total height needed for all images at full scale
+  let totalHeight = 0;
+  const originalDimensions: ImageDimension[] = [];
+  
+  // Calculate original scaled dimensions for each image
+  images.forEach((img) => {
     const aspectRatio = img.width / img.height;
+    const drawWidth = canvasWidth;
+    const drawHeight = drawWidth / aspectRatio;
     
-    // Calculate dimensions while maintaining aspect ratio
-    let drawHeight = heightPerImage;
-    let drawWidth = drawHeight * aspectRatio;
+    originalDimensions.push({ width: drawWidth, height: drawHeight });
+    totalHeight += drawHeight;
+  });
+  
+  // Calculate scaling factor if total height exceeds available height
+  const scalingFactor = totalHeight > availableHeight ? availableHeight / totalHeight : 1;
+  
+  // Apply scaling factor to all images equally
+  const scaledDimensions = originalDimensions.map(dim => ({
+    width: dim.width,
+    height: dim.height * scalingFactor
+  }));
+  
+  // Calculate new total height
+  const newTotalHeight = scaledDimensions.reduce((sum, dim) => sum + dim.height, 0);
+  
+  // Calculate starting Y to center the entire group
+  let startY = topOffset + (availableHeight - newTotalHeight) / 2;
+  
+  // Draw each image with the same trimming approach
+  images.forEach((img, index) => {
+    const originalHeight = originalDimensions[index].height;
+    const drawWidth = scaledDimensions[index].width;
+    const drawHeight = scaledDimensions[index].height;
     
-    // If width exceeds canvas width, adjust
-    if (drawWidth > canvasWidth * 0.9) {
-      drawWidth = canvasWidth * 0.9;
-      drawHeight = drawWidth / aspectRatio;
-    }
-    
-    // Center the image horizontally
+    // Center horizontally
     const x = (canvasWidth - drawWidth) / 2;
     
-    // Calculate vertical position with padding
-    const y = topOffset + (index * (heightPerImage + padding)) + (heightPerImage - drawHeight) / 2;
+    // Calculate source rectangle for equal top/bottom trimming
+    // The trim percentage is the same for all images
+    const trimPercentage = (1 - scalingFactor) / 2;
     
-    // Draw the image
-    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+    // Calculate source coordinates
+    const sourceY = img.height * trimPercentage;
+    const sourceHeight = img.height * (1 - 2 * trimPercentage);
+    
+    // Draw only the middle portion of each image
+    ctx.drawImage(
+      img,
+      0, sourceY, img.width, sourceHeight,
+      x, startY, drawWidth, drawHeight
+    );
+    
+    // Move to next position with no gap
+    startY += drawHeight;
   });
 };
 
@@ -109,33 +144,40 @@ const renderLandscapeDesktopImages = (
   topOffset: number
 ) => {
   const count = images.length;
-  const padding = 15; // Padding between images
   
-  // Calculate height per image (with padding between)
-  const totalPaddingHeight = (count - 1) * padding;
-  const heightPerImage = (availableHeight - totalPaddingHeight) / count;
+  // First, calculate total height needed for all images
+  let totalHeight = 0;
+  const scaledHeights = [];
   
-  images.forEach((img, index) => {
+  // Calculate scaled dimensions for each image
+  images.forEach((img) => {
     const aspectRatio = img.width / img.height;
     
-    // Calculate dimensions while maintaining aspect ratio
-    let drawHeight = heightPerImage;
-    let drawWidth = drawHeight * aspectRatio;
+    // Use full canvas width - no margins
+    const drawWidth = canvasWidth;
+    const drawHeight = drawWidth / aspectRatio;
     
-    // If width exceeds canvas width, adjust
-    if (drawWidth > canvasWidth) {
-      drawWidth = canvasWidth;
-      drawHeight = drawWidth / aspectRatio;
-    }
+    scaledHeights.push(drawHeight);
+    totalHeight += drawHeight;
+  });
+  
+  // Calculate starting Y to center the entire group
+  let startY = topOffset + (availableHeight - totalHeight) / 2;
+  
+  // Draw images with no gaps
+  images.forEach((img, index) => {
+    const aspectRatio = img.width / img.height;
+    const drawWidth = canvasWidth;
+    const drawHeight = drawWidth / aspectRatio;
     
-    // Center the image horizontally
-    const x = (canvasWidth - drawWidth) / 2;
+    // No horizontal centering - use full width
+    const x = 0;
     
-    // Calculate vertical position with padding
-    const y = topOffset + (index * (heightPerImage + padding)) + (heightPerImage - drawHeight) / 2;
+    // Draw at current position with no gap
+    ctx.drawImage(img, x, startY, drawWidth, drawHeight);
     
-    // Draw the image
-    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+    // Move to next position with absolutely no gap
+    startY += drawHeight;
   });
 };
 
