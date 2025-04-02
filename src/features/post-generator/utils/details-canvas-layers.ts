@@ -1,4 +1,4 @@
-import { preloadImage } from "./image-utils";
+import { getImageType, preloadImage, validateImageSet } from "./image-utils";
 
 export const renderDetailOverlay = async (
     ctx: CanvasRenderingContext2D,
@@ -21,118 +21,175 @@ export const renderDetailOverlay = async (
     }
   };
   
-  // Render user uploaded images
-  export const renderUserImages = async (
-    ctx: CanvasRenderingContext2D,
-    images: string[],
-    canvasWidth: number,
-    canvasHeight: number,
-    renderID: number,
-    currentRenderID: number
-  ) => {
+// Render portrait mobile images
+const renderPortraitMobileImages = (
+  ctx: CanvasRenderingContext2D,
+  images: HTMLImageElement[],
+  canvasWidth: number,
+  availableHeight: number,
+  topOffset: number
+) => {
+  const count = images.length;
+  
+  // Portrait mobile images always take half width of canvas
+  const imageWidth = count === 1 ? canvasWidth / 2 : canvasWidth / count;
+  const imageHeight = availableHeight;
+  
+  images.forEach((img, index) => {
+    const aspectRatio = img.width / img.height;
+    
+    // Calculate dimensions while maintaining aspect ratio
+    let drawWidth = imageWidth;
+    let drawHeight = drawWidth / aspectRatio;
+    
+    // If height is less than available height, adjust to fill
+    if (drawHeight < imageHeight) {
+      drawHeight = imageHeight;
+      drawWidth = drawHeight * aspectRatio;
+    }
+    
+    // Center the image horizontally within its allocated space
+    const x = count === 1 
+      ? (canvasWidth - drawWidth) / 2 
+      : index * imageWidth + (imageWidth - drawWidth) / 2;
+    
+    // Calculate vertical position to center or crop as needed
+    const y = topOffset - (drawHeight - imageHeight) / 2;
+    
+    // Draw the image
+    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+  });
+};
+
+// Render landscape mobile images
+const renderLandscapeMobileImages = (
+  ctx: CanvasRenderingContext2D,
+  images: HTMLImageElement[],
+  canvasWidth: number,
+  availableHeight: number,
+  topOffset: number
+) => {
+  const count = images.length;
+  const padding = 10; // Padding between images
+  
+  // Calculate height per image (with padding between)
+  const totalPaddingHeight = (count - 1) * padding;
+  const heightPerImage = (availableHeight - totalPaddingHeight) / count;
+  
+  images.forEach((img, index) => {
+    const aspectRatio = img.width / img.height;
+    
+    // Calculate dimensions while maintaining aspect ratio
+    let drawHeight = heightPerImage;
+    let drawWidth = drawHeight * aspectRatio;
+    
+    // If width exceeds canvas width, adjust
+    if (drawWidth > canvasWidth * 0.9) {
+      drawWidth = canvasWidth * 0.9;
+      drawHeight = drawWidth / aspectRatio;
+    }
+    
+    // Center the image horizontally
+    const x = (canvasWidth - drawWidth) / 2;
+    
+    // Calculate vertical position with padding
+    const y = topOffset + (index * (heightPerImage + padding)) + (heightPerImage - drawHeight) / 2;
+    
+    // Draw the image
+    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+  });
+};
+
+// Render landscape desktop images
+const renderLandscapeDesktopImages = (
+  ctx: CanvasRenderingContext2D,
+  images: HTMLImageElement[],
+  canvasWidth: number,
+  availableHeight: number,
+  topOffset: number
+) => {
+  const count = images.length;
+  const padding = 15; // Padding between images
+  
+  // Calculate height per image (with padding between)
+  const totalPaddingHeight = (count - 1) * padding;
+  const heightPerImage = (availableHeight - totalPaddingHeight) / count;
+  
+  images.forEach((img, index) => {
+    const aspectRatio = img.width / img.height;
+    
+    // Calculate dimensions while maintaining aspect ratio
+    let drawHeight = heightPerImage;
+    let drawWidth = drawHeight * aspectRatio;
+    
+    // If width exceeds canvas width, adjust
+    if (drawWidth > canvasWidth) {
+      drawWidth = canvasWidth;
+      drawHeight = drawWidth / aspectRatio;
+    }
+    
+    // Center the image horizontally
+    const x = (canvasWidth - drawWidth) / 2;
+    
+    // Calculate vertical position with padding
+    const y = topOffset + (index * (heightPerImage + padding)) + (heightPerImage - drawHeight) / 2;
+    
+    // Draw the image
+    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+  });
+};
+
+// Main render function
+export const renderUserImages = async (
+  ctx: CanvasRenderingContext2D,
+  images: string[],
+  canvasWidth: number,
+  canvasHeight: number,
+  renderID: number,
+  currentRenderID: number
+) => {
+  if (currentRenderID !== renderID) return;
+  
+  const imageCount = images.length;
+  if (imageCount === 0) return;
+  
+  try {
+    // Load all images first
+    const loadedImages = await Promise.all(
+      images.map(url => preloadImage(url))
+    );
+    
     if (currentRenderID !== renderID) return;
     
-    const imageCount = images.length;
-    if (imageCount === 0) return;
+    // Validate images are of the same type
+    if (!validateImageSet(loadedImages)) {
+      console.error("Images must be of the same type, and the number of images must be valid for that type");
+      return;
+    }
     
-    try {
-      // Load all images first
-      const loadedImages = await Promise.all(
-        images.map(url => preloadImage(url))
-      );
-      
-      if (currentRenderID !== renderID) return;
-      
-      // Simple grid layout based on number of images
-      if (imageCount === 1) {
-        // Single image - center it
-        const img = loadedImages[0];
-        const aspectRatio = img.width / img.height;
-        let drawWidth, drawHeight;
-        
-        // Calculate size to fit within boundaries while maintaining aspect ratio
-        const maxWidth = canvasWidth * 0.85;  // 85% of canvas width
-        const maxHeight = canvasHeight * 0.6; // 60% of canvas height
-        
-        if (aspectRatio > 1) {
-          // Landscape image
-          drawWidth = Math.min(maxWidth, img.width);
-          drawHeight = drawWidth / aspectRatio;
-        } else {
-          // Portrait image
-          drawHeight = Math.min(maxHeight, img.height);
-          drawWidth = drawHeight * aspectRatio;
-        }
-        
-        // Center the image
-        const x = (canvasWidth - drawWidth) / 2;
-        const y = (canvasHeight - drawHeight) / 2;
-        
-        ctx.drawImage(img, x, y, drawWidth, drawHeight);
-      } 
-      else {
-        // Multiple images - create a simple grid
-        const gridArea = {
-          width: canvasWidth * 0.85,
-          height: canvasHeight * 0.6,
-          x: canvasWidth * 0.075,
-          y: canvasHeight * 0.2
-        };
-        
-        // Calculate grid dimensions
-        let cols = Math.ceil(Math.sqrt(imageCount));
-        let rows = Math.ceil(imageCount / cols);
-        
-        // Calculate cell size
-        const cellWidth = gridArea.width / cols;
-        const cellHeight = gridArea.height / rows;
-        const cellPadding = 10; // Padding between images
-        
-        // Draw each image
-        loadedImages.forEach((img, index) => {
-          if (currentRenderID !== renderID) return;
-          
-          // Calculate position in grid
-          const col = index % cols;
-          const row = Math.floor(index / cols);
-          
-          // Calculate position and size
-          const aspectRatio = img.width / img.height;
-          let drawWidth, drawHeight;
-          
-          // Calculate size to fit cell with padding
-          const maxCellWidth = cellWidth - (cellPadding * 2);
-          const maxCellHeight = cellHeight - (cellPadding * 2);
-          
-          if (aspectRatio > 1) {
-            // Landscape image
-            drawWidth = maxCellWidth;
-            drawHeight = drawWidth / aspectRatio;
-            // If height exceeds cell height, adjust
-            if (drawHeight > maxCellHeight) {
-              drawHeight = maxCellHeight;
-              drawWidth = drawHeight * aspectRatio;
-            }
-          } else {
-            // Portrait image
-            drawHeight = maxCellHeight;
-            drawWidth = drawHeight * aspectRatio;
-            // If width exceeds cell width, adjust
-            if (drawWidth > maxCellWidth) {
-              drawWidth = maxCellWidth;
-              drawHeight = drawWidth / aspectRatio;
-            }
-          }
-          
-          // Calculate position to center in cell
-          const x = gridArea.x + (col * cellWidth) + ((cellWidth - drawWidth) / 2);
-          const y = gridArea.y + (row * cellHeight) + ((cellHeight - drawHeight) / 2);
-          
-          // Draw the image
-          ctx.drawImage(img, x, y, drawWidth, drawHeight);
-        });
-      }
-    } catch (error) {
-      console.error("Error rendering user images:", error);
-    }  
-  };
+    // Define the available area for images
+    const topOffset = 85;
+    const availableHeight = 1213;
+    
+    // Determine image type of the set
+    const imageType = getImageType(loadedImages[0]);
+    
+    // Render based on image type
+    switch (imageType) {
+      case 'portrait-mobile':
+        renderPortraitMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+        break;
+      case 'landscape-mobile':
+        renderLandscapeMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+        break;
+      case 'landscape-desktop':
+        renderLandscapeDesktopImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+        break;
+      default:
+        console.error("Unknown image type");
+    }
+    
+  } catch (error) {
+    console.error("Error rendering user images:", error);
+  }
+};

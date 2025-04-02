@@ -50,3 +50,39 @@ export const handleClipboardImage = (event: ClipboardEvent): Promise<string | nu
     resolve(null);
   });
 };
+
+// Helper function to determine image type
+export const getImageType = (img: HTMLImageElement): 'portrait-mobile' | 'landscape-mobile' | 'landscape-desktop' => {
+  const aspectRatio = img.width / img.height;
+  
+  if (aspectRatio < 0.8) {
+    return 'portrait-mobile';
+  } else if (aspectRatio >= 0.8 && aspectRatio <= 1.5) {
+    return 'landscape-mobile';
+  } else {
+    return 'landscape-desktop';
+  }
+};
+
+// Helper function to validate images are of the same type
+export const validateImageSet = (images: HTMLImageElement[]): boolean => {
+  if (images.length === 0) return true;
+  
+  const firstType = getImageType(images[0]);
+  
+  // Check if all images are of the same type
+  const allSameType = images.every(img => getImageType(img) === firstType);
+  
+  // Check if number of images is valid for the type
+  if (firstType === 'portrait-mobile' && images.length > 2) {
+    return false;
+  }
+  if (firstType === 'landscape-mobile' && images.length > 3) {
+    return false;
+  }
+  if (firstType === 'landscape-desktop' && images.length > 2) {
+    return false;
+  }
+  
+  return allSameType;
+};
