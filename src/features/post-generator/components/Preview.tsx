@@ -9,6 +9,7 @@ interface PreviewProps {
   currentDetailsType?: "char" | "item" | "const" | "info" | "other";
   onDetailsTypeChange?: (type: "char" | "item" | "const" | "info" | "other") => void;
   onDeleteSlide?: () => void;
+  onClearImages?: () => void; // Add this prop for clearing images
 }
 
 const Preview = ({ 
@@ -16,7 +17,8 @@ const Preview = ({
   currentSlide,
   currentDetailsType = "char",
   onDetailsTypeChange = () => {},
-  onDeleteSlide = () => {}
+  onDeleteSlide = () => {},
+  onClearImages = () => {}
 }: PreviewProps) => {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
@@ -29,6 +31,7 @@ const Preview = ({
               currentOverlayType={currentDetailsType} 
               onOverlayTypeChange={onDetailsTypeChange} 
               onDeleteSlide={onDeleteSlide}
+              onClearImages={onClearImages}
             />
           )}
         </div>
