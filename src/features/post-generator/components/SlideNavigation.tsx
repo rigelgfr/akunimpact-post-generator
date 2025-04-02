@@ -26,6 +26,14 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
     }
   };
 
+  // Get the first character of the slide type or use "-" as fallback
+  const getSlideLabel = (slideType: string | undefined) => {
+    if (!slideType || slideType.length === 0) {
+      return "-";
+    }
+    return slideType.charAt(0).toUpperCase();
+  };
+
   return (
     <div className="w-full h-16 flex items-center px-10">
       <div className="flex justify-between items-center w-full">
@@ -44,13 +52,13 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
           {/* Actual slides */}
           {slides.map((slide, index) => (
             <div 
-              key={slide.id}
+              key={slide.id || `slide-index-${index}`}
               className={`w-10 h-10 rounded flex items-center justify-center cursor-pointer ${
                 index === currentSlideIndex ? 'bg-blue-500 text-white' : 'bg-gray-400'
               }`}
               onClick={() => onSlideChange(index)}
             >
-              {slide.type.charAt(0).toUpperCase()}
+              {getSlideLabel(slide.type)}
             </div>
           ))}
           

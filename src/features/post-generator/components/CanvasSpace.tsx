@@ -110,21 +110,50 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
         });
       };
 
-      const handleDetailsTypeChange = (type: "char" | "item" | "const" | "info" | "other") => {
-        setCurrentDetailsType(type);
+      const handleDeleteSlide = () => {
+        // Don't delete if it's the only slide
+        if (slides.length <= 1) {
+          return;
+        }
         
-        // Update the current slide's overlay type
-        setSlides(prevSlides => {
-          const updatedSlides = [...prevSlides];
-          if (updatedSlides[currentSlideIndex]?.type === 'details') {
-            updatedSlides[currentSlideIndex] = {
-              ...updatedSlides[currentSlideIndex],
-              detailsType: type
-            };
-          }
-          return updatedSlides;
-        });
+        // Create new array without the current slide
+        const updatedSlides = slides.filter((_, index) => index !== currentSlideIndex);
+        
+        // Calculate new index to focus on after deletion
+        const newIndex = currentSlideIndex >= updatedSlides.length 
+          ? updatedSlides.length - 1 
+          : currentSlideIndex;
+        
+        // Update slides state
+        setSlides(updatedSlides);
+        
+        // Update current index
+        setCurrentSlideIndex(newIndex);
+        
+        // Update current image URL
+        setCurrentImageUrl(updatedSlides[newIndex]?.imageUrl || null);
+        
+        // If we're deleting the first slide (thumbnail), notify parent
+        if (currentSlideIndex === 0) {
+          onImageGenerated(updatedSlides[0]?.imageUrl || null);
+        }
       };
+
+    const handleDetailsTypeChange = (type: "char" | "item" | "const" | "info" | "other") => {
+      setCurrentDetailsType(type);
+      
+      // Update the current slide's overlay type
+      setSlides(prevSlides => {
+        const updatedSlides = [...prevSlides];
+        if (updatedSlides[currentSlideIndex]?.type === 'details') {
+          updatedSlides[currentSlideIndex] = {
+            ...updatedSlides[currentSlideIndex],
+            detailsType: type
+          };
+        }
+        return updatedSlides;
+      });
+    };
 
     return (
         <div className="h-full flex flex-col">
@@ -156,6 +185,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
               currentSlide={currentSlide.type}
               currentDetailsType={currentSlide.detailsType || "char"}
               onDetailsTypeChange={handleDetailsTypeChange}
+              onDeleteSlide={handleDeleteSlide}
             />
             
             {/* Navigation Area with slide controls */}

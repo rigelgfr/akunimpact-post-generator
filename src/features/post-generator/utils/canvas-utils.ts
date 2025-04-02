@@ -160,16 +160,16 @@ export const renderDetailsLayers = async ({
     const bgImage = await preloadImage("/assets/post-generator/background/details_bg.webp");
     if (currentRenderID !== renderID) return; // Check if we should continue rendering
     bufferCtx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
-    
-    // Layer 2: Overlay based on type
-    await renderDetailOverlay(bufferCtx, overlayType, canvasWidth, canvasHeight, renderID, currentRenderID);
-    if (currentRenderID !== renderID) return;
-    
-    // Layer 3: User Images
+
+    // Layer 2: User Images
     if (images && images.length > 0) {
       await renderUserImages(bufferCtx, images, canvasWidth, canvasHeight, renderID, currentRenderID);
       if (currentRenderID !== renderID) return;
     }
+    
+    // Layer 3: Overlay based on type
+    await renderDetailOverlay(bufferCtx, overlayType, canvasWidth, canvasHeight, renderID, currentRenderID);
+    if (currentRenderID !== renderID) return;
     
     // Layer 4: Footer (same as thumbnail)
     await renderFooter(bufferCtx, postType, canvasWidth, canvasHeight, renderID, currentRenderID);

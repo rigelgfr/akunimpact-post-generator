@@ -8,13 +8,15 @@ interface PreviewProps {
   currentSlide: string; // Add a prop to track the current slide
   currentDetailsType?: "char" | "item" | "const" | "info" | "other";
   onDetailsTypeChange?: (type: "char" | "item" | "const" | "info" | "other") => void;
+  onDeleteSlide?: () => void;
 }
 
 const Preview = ({ 
   currentImageUrl, 
   currentSlide,
   currentDetailsType = "char",
-  onDetailsTypeChange = () => {}
+  onDetailsTypeChange = () => {},
+  onDeleteSlide = () => {}
 }: PreviewProps) => {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
@@ -22,7 +24,13 @@ const Preview = ({
         {/* Details control container - always present for spacing */}
         <div className="flex justify-center h-8">
           {/* Only render DetailsControl when on the 'details' slide */}
-          {currentSlide === 'details' && <DetailsControl currentOverlayType={currentDetailsType} onOverlayTypeChange={onDetailsTypeChange} />}
+          {currentSlide === 'details' && (
+            <DetailsControl 
+              currentOverlayType={currentDetailsType} 
+              onOverlayTypeChange={onDetailsTypeChange} 
+              onDeleteSlide={onDeleteSlide}
+            />
+          )}
         </div>
         
         {/* Preview content */}
