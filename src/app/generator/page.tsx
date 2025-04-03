@@ -1,7 +1,7 @@
 // page.tsx
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import PostForm from "@/features/post-generator/components/PostForm"
 import CanvasSpace from "@/features/post-generator/components/CanvasSpace"
 
@@ -18,7 +18,7 @@ export default function PostGeneratorPage() {
 
     const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-    const handleFormChange = (
+    const handleFormChange = useCallback((
         postType: string,
         postCode: string,
         selectedGames: string[],
@@ -36,7 +36,7 @@ export default function PostGeneratorPage() {
             isStarterAccount,
             postDescription
         });
-    };
+    }, []);
 
     const handleImageGenerated = (url: string | null) => {
         setImageUrl(url);

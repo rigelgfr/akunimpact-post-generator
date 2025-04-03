@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { on } from "events"
 
 interface PostFormProps {
   onFormChange: (
@@ -102,7 +103,6 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
     }
   }, [description, renderingDescription]) 
 
-  // Modify the useEffect in PostForm.tsx
   useEffect(() => {
     // Only call onFormChange when dependencies actually change, not on every render
     if (onFormChange) {
@@ -129,6 +129,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
       );
     }
   }, [
+    onFormChange,
     selectedPostType, 
     code, 
     selectedGames, 

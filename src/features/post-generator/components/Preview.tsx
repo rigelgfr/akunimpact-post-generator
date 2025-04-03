@@ -20,6 +20,7 @@ const Preview = ({
   onDeleteSlide = () => {},
   onClearImages = () => {}
 }: PreviewProps) => {
+  {/* eslint-disable-next-line @next/next/no-img-element */}
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="w-full max-w-xl flex flex-col">
@@ -43,6 +44,8 @@ const Preview = ({
               src={currentImageUrl} 
               alt="Generated post" 
               className="w-full h-full object-contain"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">

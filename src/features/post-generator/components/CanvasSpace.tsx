@@ -252,7 +252,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
         });
       });
     };
-  }, []);
+  }, [slides]);
 
   return (
       <div className="h-full flex flex-col bg-canva-gray">

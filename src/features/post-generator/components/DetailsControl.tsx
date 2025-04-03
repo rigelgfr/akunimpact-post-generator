@@ -18,7 +18,7 @@ export default function DetailsControl({
   }) {
     return (
       <div className="flex items-center w-full">
-        <Select value={currentOverlayType} onValueChange={(value: any) => onOverlayTypeChange(value)}>
+        <Select value={currentOverlayType} onValueChange={(value: "char" | "item" | "const" | "info" | "other") => onOverlayTypeChange(value)}>
           <SelectTrigger className="bg-white mb-2 w-24 border text-xs !h-6 rounded-sm">
             <SelectValue placeholder="Details" />
           </SelectTrigger>
