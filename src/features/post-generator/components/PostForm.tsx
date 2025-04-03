@@ -140,7 +140,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   ]);
 
   // Calculate line and character limits for the textarea
-  const MAX_CHARS_PER_LINE = 45
+  const MAX_CHARS_PER_LINE = 55
   const MAX_LINES = 4
   const MAX_TOTAL_CHARS = 180
 

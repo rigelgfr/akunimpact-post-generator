@@ -210,8 +210,8 @@ export const renderUserImages = async (
     }
     
     // Define the available area for images
-    const topOffset = 85;
-    const availableHeight = 1213;
+    const topOffset = 82;
+    const availableHeight = 1215;
     
     // Determine image type of the set
     const imageType = getImageType(loadedImages[0]);

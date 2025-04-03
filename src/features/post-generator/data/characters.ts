@@ -13,12 +13,12 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/genshin/hu_tao/hu_tao_3.webp',
             ],
         },
-        'Raiden Shogun': {
-            name: 'Raiden Shogun',
+        'Furina': {
+            name: 'Furina',
             images: [
-                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_1.webp',
-                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_2.webp',
-                '/assets/post-generator/characters/genshin/raiden_shogun/raiden_shogun_3.webp',
+                '/assets/post-generator/characters/genshin/furina/furina_1.webp',
+                '/assets/post-generator/characters/genshin/furina/furina_2.webp',
+                '/assets/post-generator/characters/genshin/furina/furina_3.webp',
             ],
         }
     },
@@ -31,7 +31,14 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/hsr/kafka/kafka_3.webp',
             ],
         },
-        
+        'Firefly': {
+            name: 'Firefly',
+            images: [
+                '/assets/post-generator/characters/hsr/firefly/firefly_1.webp',
+                '/assets/post-generator/characters/hsr/firefly/firefly_2.webp',
+                '/assets/post-generator/characters/hsr/firefly/firefly_3.webp',
+            ],
+        }
     },
     'zzz': {
         'Jane Doe': {

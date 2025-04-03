@@ -319,7 +319,7 @@ export async function renderPostDescription(
     if (currentRenderID !== renderID) return;
   
     try {
-      const maxCharsPerLine = 45; // Maximum characters per line
+      const maxCharsPerLine = 55; // Maximum characters per line
       const maxLines = 4; // Maximum number of lines to display
       
       // Load the font (using system Arial Bold instead of Arial Unicode Bold)
