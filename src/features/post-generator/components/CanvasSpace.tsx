@@ -7,6 +7,7 @@ import SlideNavigation from "./SlideNavigation"
 import Preview from "./Preview"
 
 import { handleClipboardImage } from "../utils/image-utils" // Import the new utility
+import CanvasHeader from "./CanvasHeader"
 
 interface CanvasSpaceProps {
   postType: string;
@@ -255,6 +256,8 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
 
   return (
       <div className="h-full flex flex-col">
+          <CanvasHeader slides={slides} postCode={postCode} />
+
           {currentSlide.type === 'thumbnail' && (
               <ThumbnailCanvas
                   postType={postType}

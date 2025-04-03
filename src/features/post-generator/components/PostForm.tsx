@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Characters } from "../data/characters"
-import DownloadButton from "@/components/generator/DownloadButton"
 import { useDebounce } from "@/hooks/useDebounce"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -152,15 +151,15 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   const lineCountWarning = lineCount > MAX_LINES
 
   return (
-    <div className="w-1/4 h-screen">
+    <div className="w-1/4">
       {/* Form Section */}
-      <div className="bg-white p-6 border-r rounded-r-3xl shadow-lg h-screen overflow-y-auto">
+      <div className="bg-white p-6 shadow-md h-screen overflow-y-auto">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Configure Post</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Configure Post</h2>
   
           {/* Post Type Selection */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Post Type:</Label>
+            <Label className="text-base">Post Type:</Label>
             <RadioGroup value={selectedPostType} onValueChange={setSelectedPostType} className="flex space-x-4">
               {["New", "Drop", "Repost"].map((type) => (
                 <div key={type} className="flex items-center space-x-2">
@@ -169,7 +168,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
                     id={`type-${type}`} 
                     className="h-3.5 w-3.5 border-ai-cyan text-ai-cyan focus:ring-ai-cyan" 
                   />
-                  <Label htmlFor={`type-${type}`} className="text-xs font-normal">
+                  <Label htmlFor={`type-${type}`} className="text-base font-normal">
                     {type}
                   </Label>
                 </div>
@@ -179,14 +178,14 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   
           {/* Code Input */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Code:</Label>
-            <div className="flex h-8 w-1/3 items-center rounded-md border border-input bg-background px-3 py-1 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
-              <span className="text-xs text-muted-foreground mr-2">AAA</span>
+            <Label className=" text-base">Code:</Label>
+            <div className="flex w-1/3 items-center rounded-md border border-input bg-background px-3 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
+              <span className=" text-base text-muted-foreground mr-2">AAA</span>
               <Input
                 type="text"
                 value={codeInput}
                 onChange={(e) => handleCodeChange(e.target.value)}
-                className="flex-1 border-0 h-6 p-0 text-xs shadow-none focus-visible:ring-0"
+                className="flex-1 items-center border-0 p-0 text-base shadow-none focus-visible:ring-0"
                 maxLength={4}
               />
             </div>
@@ -194,7 +193,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   
           {/* Game Selection */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Select Games:</Label>
+            <Label className="text-base">Select Games:</Label>
             <div className="grid grid-cols-3 gap-1.5">
               {Object.keys(Characters).map((game) => (
                 <div key={game} className="flex items-center space-x-1.5">
@@ -203,9 +202,9 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
                     checked={selectedGames.includes(game)}
                     onCheckedChange={() => handleGameChange(game)}
                     disabled={!selectedGames.includes(game) && selectedGames.length >= 3}
-                    className="h-3.5 w-3.5 border-ai-cyan text-ai-cyan focus:ring-ai-cyan data-[state=checked]:bg-ai-cyan data-[state=checked]:border-ai-cyan"
+                    className="h-4 w-4 border-ai-cyan text-ai-cyan focus:ring-ai-cyan data-[state=checked]:bg-ai-cyan data-[state=checked]:border-ai-cyan"
                   />
-                  <Label htmlFor={`game-${game}`} className="text-xs font-normal">
+                  <Label htmlFor={`game-${game}`} className="text-base font-normal">
                     {game.toUpperCase()}
                   </Label>
                 </div>
@@ -216,22 +215,22 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
           {/* Character Selection */}
           {selectedGames.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-xs">Character Selection:</Label>
+              <Label className="text-base">Character Selection:</Label>
               {selectedGames.map((game) => (
                 <div key={game} className="flex items-center space-x-2">
-                  <span className="text-xs font-medium bg-ai-cyan text-white px-2 py-0.5 rounded w-20 text-center">
+                  <span className="text-sm font-medium bg-ai-cyan text-white px-2 py-0.5 rounded w-20 text-center">
                     {game.toUpperCase()}
                   </span>
                   <Select
                     value={selectedCharacters[game] || ""}
                     onValueChange={(value) => handleCharacterChange(game, value)}
                   >
-                    <SelectTrigger className="flex-1 text-xs border-input focus:border-ai-cyan focus:ring-1 focus:ring-ai-cyan">
+                    <SelectTrigger className="flex-1 text-base border-input focus:border-ai-cyan focus:ring-1 focus:ring-ai-cyan">
                       <SelectValue placeholder="Select a Character" />
                     </SelectTrigger>
-                    <SelectContent className="text-xs">
+                    <SelectContent className="text-base">
                       {Object.keys(Characters[game]).map((character) => (
-                        <SelectItem key={character} value={character} className="text-xs">
+                        <SelectItem key={character} value={character} className="text-base">
                           {character}
                         </SelectItem>
                       ))}
@@ -244,16 +243,16 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   
           {/* Net Price */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Net Price:</Label>
-            <div className="flex h-8 w-1/3 items-center rounded-md border border-input bg-background px-3 py-1 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
+            <Label className="text-base">Net Price:</Label>
+            <div className="flex w-1/3 items-center rounded-md border border-input bg-background px-3 text-base focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
               <Input
                 type="text"
                 value={netPriceInput}
                 onChange={(e) => handleNetPriceChange(e.target.value)}
-                className="flex-1 border-0 h-6 p-0 text-xs text-right shadow-none focus-visible:ring-0"
+                className="flex-1 border-0 text-base text-right shadow-none focus-visible:ring-0"
                 maxLength={5}
               />
-              <span className="ml-1 text-xs text-muted-foreground">K</span>
+              <span className="ml-1 text-base text-muted-foreground">K</span>
             </div>
           </div>
   
@@ -263,16 +262,16 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
               id="starter-account"
               checked={isStarterAccount}
               onCheckedChange={(checked) => setIsStarterAccount(checked === true)}
-              className="h-3.5 w-3.5 border-ai-cyan text-ai-cyan focus:ring-ai-cyan data-[state=checked]:bg-ai-cyan data-[state=checked]:border-ai-cyan"
+              className="h-4 w-4 border-ai-cyan text-ai-cyan focus:ring-ai-cyan data-[state=checked]:bg-ai-cyan data-[state=checked]:border-ai-cyan"
             />
-            <Label htmlFor="starter-account" className="text-xs font-normal">
+            <Label htmlFor="starter-account" className="text-base font-normal">
               Starter account?
             </Label>
           </div>
   
           {/* Description */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Description:</Label>
+            <Label className="text-base">Description:</Label>
             <div className="relative">
               <Textarea
                 value={descriptionInput}
@@ -280,11 +279,11 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
                 maxLength={MAX_TOTAL_CHARS}
                 placeholder={`Max ${MAX_CHARS_PER_LINE} chars per line, ${MAX_LINES} lines max`}
                 rows={4}
-                className={`min-h-[100px] text-xs resize-none border-input focus:border-ai-cyan focus-visible:ring-ai-cyan focus-visible:ring-1 ${
+                className={`min-h-[100px] text-base resize-none border-input focus:border-ai-cyan focus-visible:ring-ai-cyan focus-visible:ring-1 ${
                   hasLineWarning || lineCountWarning ? 'border-yellow-500' : ''
                 }`}
               />
-              <div className={`absolute bottom-1 right-2 text-[10px] ${
+              <div className={`absolute bottom-1 right-2 text-[12px] ${
                 hasLineWarning || lineCountWarning ? 'text-yellow-600' : 'text-muted-foreground'
               }`}>
                 {descriptionInput.length}/{MAX_TOTAL_CHARS} | {lineCount}/{MAX_LINES} lines
@@ -293,16 +292,11 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
               
               {/* Line length warnings */}
               {hasLineWarning && (
-                <div className="absolute top-1 right-2 text-[10px] text-yellow-600">
+                <div className="absolute top-1 right-2 text-[12px] text-yellow-600">
                   Some lines exceed {MAX_CHARS_PER_LINE} characters
                 </div>
               )}
             </div>
-          </div>
-  
-          {/* Download Button */}
-          <div className="pt-2">
-            {imageUrl && <DownloadButton imageUrl={imageUrl} postCode={"AAA" + code} />}
           </div>
         </form>
       </div>

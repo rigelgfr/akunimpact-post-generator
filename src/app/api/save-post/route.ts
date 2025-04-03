@@ -1,12 +1,11 @@
-// app/api/save-image/route.ts
+// app/api/save-post/route.ts
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { toast } from 'sonner';
 
 export async function POST(request: Request) {
     try {
-        const { imageUrl, postCode } = await request.json();
+        const { imageUrl, postCode, fileName } = await request.json();
 
         if (!imageUrl || !postCode) {
             return NextResponse.json({ error: 'Missing required parameters: imageUrl, postCode' }, { status: 400 });
@@ -45,27 +44,34 @@ export async function POST(request: Request) {
             }
         }
 
-        // Find the next file number
-        let fileNumber = 1;
-        try {
-            const existingFiles = await fs.promises.readdir(postDir);
-            const numberedFiles = existingFiles.filter(file => 
-                file.match(new RegExp(`^\\d+${fileExtension.replace('.', '\\.')}$`))
-            );
-            
-            if (numberedFiles.length > 0) {
-                const highestNumber = Math.max(...numberedFiles.map(file => {
-                    const match = file.match(/^(\d+)/);
-                    return match ? parseInt(match[1], 10) : 0;
-                }));
-                fileNumber = highestNumber + 1;
+        // Use the provided fileName or generate a new one
+        let imageName;
+        if (fileName) {
+            imageName = `${fileName}${fileExtension}`;
+        } else {
+            // Find the next file number (legacy behavior as fallback)
+            let fileNumber = 1;
+            try {
+                const existingFiles = await fs.promises.readdir(postDir);
+                const numberedFiles = existingFiles.filter(file => 
+                    file.match(new RegExp(`^\\d+${fileExtension.replace('.', '\\.')}$`))
+                );
+                
+                if (numberedFiles.length > 0) {
+                    const highestNumber = Math.max(...numberedFiles.map(file => {
+                        const match = file.match(/^(\d+)/);
+                        return match ? parseInt(match[1], 10) : 0;
+                    }));
+                    fileNumber = highestNumber + 1;
+                }
+            } catch (error) {
+                console.error(`Failed to find file number: ${error}`);
             }
-        } catch (error) {
-            toast.error(`Failed to find file number: ${error}`);
+            
+            imageName = `${fileNumber}${fileExtension}`;
         }
 
-        // Create filename and path
-        const imageName = `${fileNumber}${fileExtension}`;
+        // Create path
         const filePath = path.join(postDir, imageName);
         const relativePath = path.join(dateStr, postCode, imageName);
 
