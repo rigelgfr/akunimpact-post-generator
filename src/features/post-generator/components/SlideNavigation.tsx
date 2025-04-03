@@ -35,16 +35,16 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
   };
 
   return (
-    <div className="w-full h-16 flex items-center px-10">
+    <div className="w-full flex items-center px-10 py-4">
       <div className="flex justify-between items-center w-full">
         <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-2">PREV</span>
+          <span className="text-base text-gray-500 mr-2">PREV</span>
           <button 
             className="w-6 h-6 flex items-center justify-center"
             onClick={handlePrevSlide}
             disabled={currentSlideIndex === 0}
           >
-            <ChevronLeft size={16} className={currentSlideIndex === 0 ? "text-gray-300" : "text-gray-600"} />
+            <ChevronLeft size={20} className={currentSlideIndex === 0 ? "text-gray-300" : "text-ai-cyan"} />
           </button>
         </div>
         
@@ -77,9 +77,9 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
             onClick={handleNextSlide}
             disabled={currentSlideIndex === slides.length - 1}
           >
-            <ChevronRight size={16} className={currentSlideIndex === slides.length - 1 ? "text-gray-300" : "text-gray-600"} />
+            <ChevronRight size={20} className={currentSlideIndex === slides.length - 1 ? "text-gray-300" : "text-ai-cyan"} />
           </button>
-          <span className="text-sm text-gray-500 ml-2">NEXT</span>
+          <span className="text-base text-gray-500 ml-2">NEXT</span>
         </div>
       </div>
     </div>

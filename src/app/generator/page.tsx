@@ -43,8 +43,8 @@ export default function PostGeneratorPage() {
     };
 
     return (
-        <main className="h-screen bg-canva-gray overflow-hidden">
-            <div className="flex h-full">
+        <main className="h-screen">
+            <div className="flex flex-col lg:flex-row h-full">
                 {/* Form section */}
                 <PostForm 
                     onFormChange={handleFormChange} 

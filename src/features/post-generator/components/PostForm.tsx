@@ -151,9 +151,9 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
   const lineCountWarning = lineCount > MAX_LINES
 
   return (
-    <div className="w-1/4">
+    <div className="w-full lg:w-1/3 xl:w-1/4">
       {/* Form Section */}
-      <div className="bg-white p-6 shadow-md h-screen overflow-y-auto">
+      <div className="bg-white p-6 shadow-md lg:h-screen overflow-y-auto">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">Configure Post</h2>
   
@@ -179,8 +179,8 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
           {/* Code Input */}
           <div className="space-y-1.5">
             <Label className=" text-base">Code:</Label>
-            <div className="flex w-1/3 items-center rounded-md border border-input bg-background px-3 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
-              <span className=" text-base text-muted-foreground mr-2">AAA</span>
+            <div className="flex w-full xl:w-1/3 items-center rounded-md border border-input bg-background px-3 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
+              <span className="text-base text-muted-foreground mr-2">AAA</span>
               <Input
                 type="text"
                 value={codeInput}
@@ -244,7 +244,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
           {/* Net Price */}
           <div className="space-y-1.5">
             <Label className="text-base">Net Price:</Label>
-            <div className="flex w-1/3 items-center rounded-md border border-input bg-background px-3 text-base focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
+            <div className="flex w-full xl:w-1/3 items-center rounded-md border border-input bg-background px-3 text-base focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
               <Input
                 type="text"
                 value={netPriceInput}

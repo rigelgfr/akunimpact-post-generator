@@ -109,7 +109,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode }) => {
   };
 
   return (
-    <div className="flex justify-end p-2 text-ai-cyan text-5xl">
+    <div className="absolute right-0 flex justify-end p-2 text-ai-cyan text-5xl">
         <Button 
             onClick={downloadAllImages} 
             disabled={!slides.some(slide => slide.imageUrl) || isDownloading}

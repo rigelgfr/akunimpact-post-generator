@@ -255,7 +255,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   }, []);
 
   return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col bg-canva-gray">
           <CanvasHeader slides={slides} postCode={postCode} />
 
           {currentSlide.type === 'thumbnail' && (
