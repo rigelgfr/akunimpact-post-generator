@@ -171,34 +171,38 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
       });
     };
 
-    const handleDeleteSlide = () => {
-      // Don't delete if it's the only slide
-      if (slides.length <= 1) {
-        return;
-      }
-      
-      // Create new array without the current slide
-      const updatedSlides = slides.filter((_, index) => index !== currentSlideIndex);
-      
-      // Calculate new index to focus on after deletion
-      const newIndex = currentSlideIndex >= updatedSlides.length 
-        ? updatedSlides.length - 1 
-        : currentSlideIndex;
-      
-      // Update slides state
-      setSlides(updatedSlides);
-      
-      // Update current index
-      setCurrentSlideIndex(newIndex);
-      
-      // Update current image URL
-      setCurrentImageUrl(updatedSlides[newIndex]?.imageUrl || null);
-      
-      // If we're deleting the first slide (thumbnail), notify parent
-      if (currentSlideIndex === 0) {
-        onImageGenerated(updatedSlides[0]?.imageUrl || null);
-      }
-    };
+  const handleDeleteSlide = () => {
+    // Don't delete if it's the only slide
+    if (slides.length <= 1) {
+      return;
+    }
+    
+    // Create new array without the current slide
+    const updatedSlides = slides.filter((_, index) => index !== currentSlideIndex);
+    
+    // Calculate new index to focus on after deletion
+    const newIndex = currentSlideIndex >= updatedSlides.length 
+      ? updatedSlides.length - 1 
+      : currentSlideIndex;
+    
+    // Update slides state
+    setSlides(updatedSlides);
+    
+    // Update current index
+    setCurrentSlideIndex(newIndex);
+    
+    // Update current image URL
+    setCurrentImageUrl(updatedSlides[newIndex]?.imageUrl || null);
+    
+    // If we're deleting the first slide (thumbnail), notify parent
+    if (currentSlideIndex === 0) {
+      onImageGenerated(updatedSlides[0]?.imageUrl || null);
+    }
+  };
+
+  const handleReorderSlides = (newSlides: Slide[]) => {
+    setSlides(newSlides);
+  };
 
   const handleDetailsTypeChange = (type: "char" | "item" | "const" | "info" | "other") => {
     setCurrentDetailsType(type);
@@ -321,6 +325,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
             currentSlideIndex={currentSlideIndex}
             onSlideChange={handleSlideChange}
             onAddSlide={handleAddSlide}
+            onReorderSlides={handleReorderSlides}
           />
       </div>
   );
