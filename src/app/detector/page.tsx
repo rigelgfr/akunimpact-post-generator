@@ -2,12 +2,7 @@
 'use client'; // Required for hooks and event handlers
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-
-// Reuse or redefine the DetectionBox interface here
-interface DetectionBox {
-    x1: number; y1: number; x2: number; y2: number;
-    score: number; classId: number; className: string;
-}
+import { DetectionBox } from '@/utils/model-utils';
 
 export default function DetectorPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -101,10 +96,6 @@ export default function DetectorPage() {
             // --- Metrics Handling ---
             const apiMetrics = {
                 frontendRequestTime: parseFloat(((endTime - startTime) / 1000).toFixed(3)),
-                // Add backend timings if your API starts returning them
-                // e.g., preprocessingTime: result.metrics?.preprocessingTime,
-                // inferenceTime: result.metrics?.inferenceTime,
-                // postprocessingTime: result.metrics?.postprocessingTime,
             };
             setMetrics(apiMetrics); // Store metrics
 
@@ -172,9 +163,6 @@ export default function DetectorPage() {
                     ref={fileInputRef}
                     style={{ display: 'block', marginBottom: '10px' }}
                 />
-                {/* Or hide the input and use a button:
-                 <button onClick={() => fileInputRef.current?.click()}>Select Image</button>
-                 */}
             </div>
 
             {previewUrl && (

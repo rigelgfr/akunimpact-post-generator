@@ -38,6 +38,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode }) => {
         
         const slideType = slide.type === 'thumbnail' ? 'thumbnail' : `detail-${slide.detailsType || 'other'}`;
         const slideIndex = slides.indexOf(slide);
+        const isThumbnail = slideIndex === 0 || slide.type === 'thumbnail';
         
         // Call the API route for each image
         const response = await fetch('/api/save-post', {
@@ -48,7 +49,8 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode }) => {
           body: JSON.stringify({ 
             imageUrl: slide.imageUrl, 
             postCode, 
-            fileName: `${postCode}-${slideType}-${slideIndex}` 
+            fileName: `${postCode}-${slideType}-${slideIndex}`,
+            applyMasking: !isThumbnail // Only apply masking to non-thumbnail images
           }),
         });
 

@@ -2,10 +2,11 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { detectAndMaskObjects } from '@/utils/model-utils';
 
 export async function POST(request: Request) {
     try {
-        const { imageUrl, postCode, fileName } = await request.json();
+        const { imageUrl, postCode, fileName, applyMasking = false } = await request.json();
 
         if (!imageUrl || !postCode) {
             return NextResponse.json({ error: 'Missing required parameters: imageUrl, postCode' }, { status: 400 });
@@ -26,21 +27,57 @@ export async function POST(request: Request) {
         // Create directories if they don't exist
         await fs.promises.mkdir(postDir, { recursive: true });
 
-        // Fetch image
-        const imageResponse = await fetch(imageUrl);
-        if (!imageResponse.ok) {
-            throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        // Handle image data - could be base64 or URL
+        let imageBuffer: Buffer;
+        let fileExtension = '.png'; // Default
+
+        if (imageUrl.startsWith('data:')) {
+            // Handle base64 image
+            const matches = imageUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+            
+            if (!matches || matches.length !== 3) {
+                throw new Error('Invalid base64 image format');
+            }
+            
+            const imageType = matches[1].toLowerCase();
+            const base64Data = matches[2];
+            
+            // Set file extension based on image type
+            if (imageType === 'jpeg' || imageType === 'jpg') {
+                fileExtension = '.jpg';
+            } else if (imageType === 'png') {
+                fileExtension = '.png';
+            }
+            
+            imageBuffer = Buffer.from(base64Data, 'base64');
+        } else {
+            // Handle URL image
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+            }
+            
+            // Get content type for file extension
+            const contentType = imageResponse.headers.get('content-type');
+            
+            if (contentType) {
+                if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+                    fileExtension = '.jpg';
+                } else if (contentType.includes('png')) {
+                    fileExtension = '.png';
+                }
+            }
+            
+            imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
         }
 
-        // Get content type for file extension
-        const contentType = imageResponse.headers.get('content-type');
-        let fileExtension = '.png'; // Default
-        
-        if (contentType) {
-            if (contentType.includes('jpeg') || contentType.includes('jpg')) {
-                fileExtension = '.jpg';
-            } else if (contentType.includes('png')) {
-                fileExtension = '.png';
+        // Apply object detection and masking if requested (and not for thumbnails)
+        if (applyMasking && fileName && !fileName.includes('thumbnail')) {
+            try {
+                imageBuffer = await detectAndMaskObjects(imageBuffer, '#4086a2');
+            } catch (maskingError) {
+                console.error('Error during object detection and masking:', maskingError);
+                // Continue with the original image if masking fails
             }
         }
 
@@ -76,8 +113,7 @@ export async function POST(request: Request) {
         const relativePath = path.join(dateStr, postCode, imageName);
 
         // Save the file
-        const imageBuffer = await imageResponse.arrayBuffer();
-        await fs.promises.writeFile(filePath, Buffer.from(imageBuffer));
+        await fs.promises.writeFile(filePath, imageBuffer);
 
         return NextResponse.json({ 
             message: `Image saved successfully`,
