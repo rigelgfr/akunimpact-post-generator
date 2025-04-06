@@ -203,9 +203,9 @@ export const renderUserImages = async (
     
     if (currentRenderID !== renderID) return;
     
-    // Validate images are of the same type
+    // Validate images are of the same type or mixed landscapes
     if (!validateImageSet(loadedImages)) {
-      console.error("Images must be of the same type, and the number of images must be valid for that type");
+      console.error("Images must be of the same type or mixed landscapes, and the number of images must be valid");
       return;
     }
     
@@ -213,22 +213,32 @@ export const renderUserImages = async (
     const topOffset = 82;
     const availableHeight = 1215;
     
-    // Determine image type of the set
-    const imageType = getImageType(loadedImages[0]);
+    // Check if we have mixed landscapes
+    const firstType = getImageType(loadedImages[0]);
+    const isAllSameType = loadedImages.every(img => getImageType(img) === firstType);
+    const isMixedLandscapes = loadedImages.every(img => {
+      const type = getImageType(img);
+      return type === 'landscape-mobile' || type === 'landscape-desktop';
+    }) && !isAllSameType;
     
-    // Render based on image type
-    switch (imageType) {
-      case 'portrait-mobile':
-        renderPortraitMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
-        break;
-      case 'landscape-mobile':
-        renderLandscapeMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
-        break;
-      case 'landscape-desktop':
-        renderLandscapeDesktopImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
-        break;
-      default:
-        console.error("Unknown image type");
+    if (isMixedLandscapes) {
+      // Render mixed landscapes similarly to landscape desktop (stacked with no gaps)
+      renderLandscapeDesktopImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+    } else {
+      // Render based on image type using existing functions
+      switch (firstType) {
+        case 'portrait-mobile':
+          renderPortraitMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+          break;
+        case 'landscape-mobile':
+          renderLandscapeMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+          break;
+        case 'landscape-desktop':
+          renderLandscapeDesktopImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+          break;
+        default:
+          console.error("Unknown image type");
+      }
     }
     
   } catch (error) {

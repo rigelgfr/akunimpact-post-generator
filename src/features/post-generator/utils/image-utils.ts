@@ -72,9 +72,15 @@ export const validateImageSet = (images: HTMLImageElement[]): boolean => {
   
   // Check if all images are of the same type
   const allSameType = images.every(img => getImageType(img) === firstType);
-
-   // Debug: Log types and aspect ratios
-   images.forEach((img, index) => {
+  
+  // New condition: Check if images are mixed landscapes
+  const allLandscapes = images.every(img => {
+    const type = getImageType(img);
+    return type === 'landscape-mobile' || type === 'landscape-desktop';
+  });
+  
+  // Debug: Log types and aspect ratios
+  images.forEach((img, index) => {
     const ratio = img.width / img.height;
     const type = getImageType(img);
     console.log(`Image ${index}: Type = ${type}, Aspect Ratio = ${ratio}`);
@@ -84,12 +90,17 @@ export const validateImageSet = (images: HTMLImageElement[]): boolean => {
   if (firstType === 'portrait-mobile' && images.length > 2) {
     return false;
   }
-  if (firstType === 'landscape-mobile' && images.length > 3) {
-    return false;
-  }
-  if (firstType === 'landscape-desktop' && images.length > 2) {
+  
+  // Original landscape type validation
+  if ((firstType === 'landscape-mobile' && images.length > 3 && allSameType) ||
+      (firstType === 'landscape-desktop' && images.length > 2 && allSameType)) {
     return false;
   }
   
-  return allSameType;
+  // Mixed landscape validation: limit to 2 images
+  if (allLandscapes && !allSameType && images.length > 2) {
+    return false;
+  }
+  
+  return allSameType || allLandscapes;
 };
