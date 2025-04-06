@@ -57,11 +57,19 @@ export async function getSession(): Promise<InferenceSession> {
                 await fs.access(path.join(ABSOLUTE_WASM_PATH, wasmFile));
                 await fs.access(path.join(ABSOLUTE_WASM_PATH, mjsFile));
                 console.log(`Verified ${wasmFile} and ${mjsFile} exist in ${ABSOLUTE_WASM_PATH}`);
-            } catch (fileAccessError: any) {
-                 console.error(`Error accessing WASM/MJS files in ${ABSOLUTE_WASM_PATH}:`, fileAccessError);
-                 console.error(`!!! Please ensure '${path.basename(fileAccessError.path)}' exists in 'public/onnxruntime' directory !!!`);
-                 reject(new Error(`Missing required WASM/MJS file: ${path.basename(fileAccessError.path)}`));
-                 return; // Stop execution
+            } catch (fileAccessError: unknown) {
+                console.error(`Error accessing WASM/MJS files in ${ABSOLUTE_WASM_PATH}:`, fileAccessError);
+                
+                // Check if fileAccessError has a path property
+                const errorPath = (fileAccessError as {path?: string}).path;
+                if (errorPath) {
+                    console.error(`!!! Please ensure '${path.basename(errorPath)}' exists in 'public/onnxruntime' directory !!!`);
+                    reject(new Error(`Missing required WASM/MJS file: ${path.basename(errorPath)}`));
+                } else {
+                    console.error("!!! Missing required WASM/MJS files !!!");
+                    reject(new Error("Missing required WASM/MJS file"));
+                }
+                return; // Stop execution
             }
 
             console.log(`Loading model from: ${MODEL_PATH}`);

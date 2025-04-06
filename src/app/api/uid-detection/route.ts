@@ -54,15 +54,16 @@ export async function POST(request: NextRequest) {
         // 6. Return Results
         return NextResponse.json({ detections });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error in detection API:', error);
-        // Check for specific ORT errors if needed
-        if (error.message && error.message.includes('Model failed to load')) {
-             return NextResponse.json({ error: 'Failed to load the ONNX model.', details: error.message }, { status: 500 });
+
+        if (error instanceof Error && error.message.includes('Model failed to load')) {
+            return NextResponse.json({ error: 'Failed to load the ONNX model.', details: error.message }, { status: 500 });
         }
-         if (error.message && error.message.includes('input name')) {
-             return NextResponse.json({ error: 'Input name mismatch or issue.', details: error.message }, { status: 500 });
-         }
-        return NextResponse.json({ error: 'An error occurred during detection.', details: error.message || String(error) }, { status: 500 });
+        if (error instanceof Error && error.message.includes('input name')) {
+                return NextResponse.json({ error: 'Input name mismatch or issue.', details: error.message }, { status: 500 });
+        }
+       const errorMessage = error instanceof Error ? error.message : String(error);
+       return NextResponse.json({ error: 'An error occurred during detection.', details: errorMessage }, { status: 500 });
     }
 }

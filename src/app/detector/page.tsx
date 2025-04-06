@@ -107,9 +107,9 @@ export default function DetectorPage() {
                 setError("Received unexpected data format from API.");
             }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Detection API call failed:", err);
-            setError(err.message || 'An unknown error occurred during detection.');
+            setError(err instanceof Error ? err.message : 'An unknown error occurred during detection.');
             setDetections([]); // Clear detections on error
             setMetrics({}); // Clear metrics on error
         } finally {
