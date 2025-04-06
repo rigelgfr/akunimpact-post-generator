@@ -61,6 +61,29 @@ const renderPortraitMobileImages = (
   });
 };
 
+// Render portrait desktop images
+const renderPortraitDesktopImages = (
+  ctx: CanvasRenderingContext2D,
+  images: HTMLImageElement[],
+  canvasWidth: number,
+  availableHeight: number,
+  topOffset: number
+) => {
+  // Only use the first image since portrait-desktop is limited to 1
+  const img = images[0];
+  const aspectRatio = img.width / img.height;
+  
+  // Use full height and calculate width maintaining aspect ratio
+  const drawHeight = availableHeight;
+  const drawWidth = drawHeight * aspectRatio;
+  
+  // Center horizontally
+  const x = (canvasWidth - drawWidth) / 2;
+  
+  // Position at top offset
+  ctx.drawImage(img, x, topOffset, drawWidth, drawHeight);
+};
+
 // Render landscape mobile images
 const renderLandscapeMobileImages = (
   ctx: CanvasRenderingContext2D,
@@ -229,6 +252,9 @@ export const renderUserImages = async (
       switch (firstType) {
         case 'portrait-mobile':
           renderPortraitMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
+          break;
+        case 'portrait-desktop':
+          renderPortraitDesktopImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);
           break;
         case 'landscape-mobile':
           renderLandscapeMobileImages(ctx, loadedImages, canvasWidth, availableHeight, topOffset);

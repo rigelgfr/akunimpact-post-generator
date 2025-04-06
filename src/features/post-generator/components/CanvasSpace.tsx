@@ -105,6 +105,13 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
           URL.revokeObjectURL(imageUrl); // Clean up
           return;
         }
+
+        // Check for portrait desktop limit (1 image)
+        if (newImageType === 'portrait-desktop' && testImages.length > 1) {
+          setErrorMessage("Maximum of 1 portrait desktop image allowed");
+          URL.revokeObjectURL(imageUrl); // Clean up
+          return;
+        }
         
         // Check for landscape limits
         const firstType = existingImages.length > 0 ? getImageType(existingImages[0]) : newImageType;

@@ -51,9 +51,9 @@ const Preview = ({
               />
               {/* Error overlay - positioned to cover only the image */}
               {errorMessage && (
-                <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center animate-fade-in">
-                  <div className="bg-white bg-opacity-80 px-4 py-3 rounded-md shadow-sm">
-                    <p className="text-center text-sm font-medium text-red-700">{errorMessage}</p>
+                <div className="absolute inset-0 bg-red-700/50 flex items-center justify-center animate-fade-in">
+                  <div>
+                    <p className="text-center text-sm font-medium text-white">{errorMessage}</p>
                   </div>
                 </div>
               )}

@@ -35,12 +35,14 @@ export default function DetailsControl({
           <Button 
             variant="ghost" size="icon" className="hover:bg-ai-cyan/10 !h-6 !w-6"
             onClick={onClearImages}
+            title="Clear all images"
           >
             <RefreshCcw />
           </Button>
           <Button 
             variant="ghost" size="icon" className="hover:bg-ai-cyan/10 !h-6 !w-6"
             onClick={onDeleteSlide}
+            title="Delete slide"
           >
             <Trash />
           </Button>
