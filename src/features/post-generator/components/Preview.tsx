@@ -45,7 +45,7 @@ const Preview = ({
               alt="Generated post" 
               className="w-full h-full object-contain select-none"
               loading="lazy"
-              decoding="async"
+              decoding="sync"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
