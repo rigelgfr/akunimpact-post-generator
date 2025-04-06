@@ -41,6 +41,12 @@ export default function PostGeneratorPage() {
     const handleImageGenerated = (url: string | null) => {
         setImageUrl(url);
     };
+    
+    const [resetTrigger, setResetTrigger] = useState(0);
+
+    const handleReset = () => {
+    setResetTrigger(prev => prev + 1); // Increment to trigger form reset
+    };
 
     return (
         <main className="h-screen">
@@ -49,6 +55,7 @@ export default function PostGeneratorPage() {
                 <PostForm 
                     onFormChange={handleFormChange} 
                     imageUrl={imageUrl}
+                    resetTrigger={resetTrigger}
                 />
                 
                 {/* Canvas section */}
@@ -62,6 +69,7 @@ export default function PostGeneratorPage() {
                         isStarterAccount={formData.isStarterAccount}
                         postDescription={formData.postDescription}
                         onImageGenerated={handleImageGenerated}
+                        onReset={handleReset}
                     />
                 </div>
             </div>

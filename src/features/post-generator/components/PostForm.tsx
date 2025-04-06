@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { on } from "events"
 
 interface PostFormProps {
   onFormChange: (
@@ -24,9 +23,10 @@ interface PostFormProps {
     postDescription: string
   ) => void;
   imageUrl: string | null; // Add this prop to receive imageUrl from parent
+  resetTrigger?: number; // Add this prop to trigger reset
 }
 
-const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
+const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigger }) => {
   const [selectedPostType, setSelectedPostType] = useState<string>("New")
 
   // For code input
@@ -138,6 +138,18 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl }) => {
     isStarterAccount, 
     description,
   ]);
+
+  useEffect(() => {
+    if (resetTrigger) {
+      setSelectedPostType("New");
+      setCodeInput("");
+      setSelectedGames([]);
+      setSelectedCharacters({});
+      setNetPriceInput("");
+      setIsStarterAccount(false);
+      setDescriptionInput("");
+    }
+  }, [resetTrigger]);
 
   // Calculate line and character limits for the textarea
   const MAX_CHARS_PER_LINE = 55

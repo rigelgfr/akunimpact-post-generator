@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import ThumbnailCanvas from "./ThumbnailCanvas"
 import DetailsCanvas from "./DetailsCanvas"
 import SlideNavigation from "./SlideNavigation"
@@ -18,6 +18,7 @@ interface CanvasSpaceProps {
   isStarterAccount: boolean;
   postDescription: string;
   onImageGenerated: (url: string | null) => void;
+  onReset?: () => void; // Add this prop
 }
 
 interface Slide {
@@ -36,7 +37,8 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   netPrice,
   isStarterAccount,
   postDescription,
-  onImageGenerated
+  onImageGenerated,
+  onReset
 }) => {
   // Initialize with thumbnail as the first slide
   const [slides, setSlides] = useState<Slide[]>([
@@ -45,7 +47,6 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null); // Add a ref to the container
 
   // Get current slide - with null check for safety
   const currentSlide = slides[currentSlideIndex] || slides[0];
@@ -254,9 +255,33 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
     };
   }, [slides]);
 
+  const handleReset = useCallback(() => {
+    // Reset slides to default (only thumbnail)
+    setSlides([
+      { id: 'slide-1', type: 'thumbnail', imageUrl: null }
+    ]);
+    
+    // Reset current slide index
+    setCurrentSlideIndex(0);
+    
+    // Reset image URL
+    setCurrentImageUrl(null);
+    
+    // Reset current details type
+    setCurrentDetailsType("char");
+    
+    // Notify parent component that thumbnail was reset
+    onImageGenerated(null);
+
+    // Notify parent component
+    if (onReset) {
+      onReset();
+    }
+  }, [onReset, onImageGenerated]);
+
   return (
       <div className="h-full flex flex-col bg-canva-gray">
-          <CanvasHeader slides={slides} postCode={postCode} />
+          <CanvasHeader slides={slides} postCode={postCode} onReset={handleReset}/>
 
           {currentSlide.type === 'thumbnail' && (
               <ThumbnailCanvas

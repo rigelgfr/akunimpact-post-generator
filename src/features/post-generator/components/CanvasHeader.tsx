@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, Folder } from "lucide-react";
+import { Download, Folder, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 
 interface CanvasHeaderProps {
@@ -11,9 +11,10 @@ interface CanvasHeaderProps {
     detailsType?: "char" | "item" | "const" | "info" | "other";
   }>;
   postCode: string;
+  onReset: () => void;
 }
 
-const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode }) => {
+const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, onReset }) => {
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   const downloadAllImages = async () => {
@@ -110,28 +111,48 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode }) => {
     }
   };
 
+  const handleReset = () => {
+    // Call the onReset prop function
+    onReset();
+    
+    // Show a success toast
+    toast.success("Canvas reset successfully", {
+      description: "All changes have been reset to default",
+    });
+  };
+
   return (
     <div className="absolute right-0 flex justify-end p-2 text-ai-cyan text-5xl">
-        <Button 
-            onClick={downloadAllImages} 
-            disabled={!slides.some(slide => slide.imageUrl) || isDownloading}
-            variant="ghost"
-            size="icon"
-            className="hover:bg-ai-cyan/10"
-            title="Save all slide images"
-        >
-            <Download size={24} /> {/* Increase icon size here */}
-        </Button>
-        
-        <Button
-            onClick={openPostsFolder}
-            variant="ghost"
-            size="icon"
-            className="hover:bg-ai-cyan/10"
-            title="Open posts folder"
-        >
-            <Folder size={24} /> {/* Increase icon size here */}
-        </Button>
+      <Button 
+          onClick={handleReset}
+          variant="ghost"
+          size="icon"
+          className="hover:bg-ai-cyan/10"
+          title="Reset canvas"
+      >
+          <RefreshCcw size={24} />
+      </Button>
+
+      <Button 
+          onClick={downloadAllImages} 
+          disabled={!slides.some(slide => slide.imageUrl) || isDownloading}
+          variant="ghost"
+          size="icon"
+          className="hover:bg-ai-cyan/10"
+          title="Save all slide images"
+      >
+          <Download size={24} /> {/* Increase icon size here */}
+      </Button>
+      
+      <Button
+          onClick={openPostsFolder}
+          variant="ghost"
+          size="icon"
+          className="hover:bg-ai-cyan/10"
+          title="Open posts folder"
+      >
+          <Folder size={24} /> {/* Increase icon size here */}
+      </Button>
     </div>
   );
 };

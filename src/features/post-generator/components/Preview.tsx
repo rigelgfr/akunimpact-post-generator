@@ -43,7 +43,7 @@ const Preview = ({
             <img 
               src={currentImageUrl} 
               alt="Generated post" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain select-none"
               loading="lazy"
               decoding="async"
             />
