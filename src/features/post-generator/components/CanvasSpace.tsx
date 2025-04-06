@@ -5,8 +5,8 @@ import ThumbnailCanvas from "./ThumbnailCanvas"
 import DetailsCanvas from "./DetailsCanvas"
 import SlideNavigation from "./SlideNavigation"
 import Preview from "./Preview"
-
 import { handleClipboardImage } from "../utils/image-utils" // Import the new utility
+import { getImageType, validateImageSet, preloadImage } from "../utils/image-utils";
 import CanvasHeader from "./CanvasHeader"
 
 interface CanvasSpaceProps {
@@ -52,7 +52,9 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   const currentSlide = slides[currentSlideIndex] || slides[0];
 
   const [currentDetailsType, setCurrentDetailsType] = useState<"char" | "item" | "const" | "info" | "other">("char");
-  
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   // Use a ref to prevent infinite render loops
   const isUpdatingImage = useRef(false);
   
@@ -74,7 +76,71 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
       const imageUrl = await handleClipboardImage(event);
       
       if (imageUrl) {
-        console.log("Image found in clipboard, adding to slide");
+        console.log("Image found in clipboard, validating...");
+        
+        // Create Image object to get dimensions
+        const newImage = await preloadImage(imageUrl);
+        
+        // Get current images from the slide
+        const currentUserImages = slides[currentSlideIndex].userImages || [];
+        const newImageType = getImageType(newImage);
+        
+        // Load all existing images to check compatibility
+        const existingImages: HTMLImageElement[] = [];
+        for (const imgUrl of currentUserImages) {
+          try {
+            const img = await preloadImage(imgUrl);
+            existingImages.push(img);
+          } catch (err) {
+            console.error("Failed to load existing image:", err);
+          }
+        }
+        
+        // Create a test set including the new image
+        const testImages = [...existingImages, newImage];
+        
+        // Check if adding this image would violate our rules
+        if (newImageType === 'portrait-mobile' && testImages.length > 2) {
+          setErrorMessage("Maximum of 2 portrait mobile images allowed");
+          URL.revokeObjectURL(imageUrl); // Clean up
+          return;
+        }
+        
+        // Check for landscape limits
+        const firstType = existingImages.length > 0 ? getImageType(existingImages[0]) : newImageType;
+        const allSameType = testImages.every(img => getImageType(img) === firstType);
+        const allLandscapes = testImages.every(img => {
+          const type = getImageType(img);
+          return type === 'landscape-mobile' || type === 'landscape-desktop';
+        });
+        
+        if (firstType === 'landscape-mobile' && testImages.length > 3 && allSameType) {
+          setErrorMessage("Maximum of 3 landscape mobile images allowed");
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        
+        if (firstType === 'landscape-desktop' && testImages.length > 2 && allSameType) {
+          setErrorMessage("Maximum of 2 landscape desktop images allowed");
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        
+        if (allLandscapes && !allSameType && testImages.length > 2) {
+          setErrorMessage("Maximum of 2 mixed landscape images allowed");
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        
+        // Check if image types are compatible
+        if (!allSameType && !allLandscapes) {
+          setErrorMessage("Images must be all portrait mobile, all landscape mobile, all landscape desktop, or mixed landscapes");
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        
+        // If we made it here, the image is valid
+        console.log("Image validation passed, adding to slide");
         
         // Update the current slide with the new image
         setSlides(prevSlides => {
@@ -90,7 +156,6 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
         });
         
         // Trigger a re-render of the canvas with the new image
-        // Use a small timeout to ensure state is updated
         setTimeout(() => {
           // This will trigger the DetailsCanvas to re-render
           const detailsCanvas = document.querySelector('canvas');
@@ -112,7 +177,17 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
     return () => {
       window.removeEventListener('paste', handlePaste);
     };
-  }, [currentSlide.type, currentSlideIndex]);
+  }, [currentSlide.type, currentSlideIndex, slides]);
+
+  useEffect(() => {
+    if (!errorMessage) return;
+    
+    const timer = setTimeout(() => {
+      setErrorMessage(null);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [errorMessage]);
 
   // Handle image generated from the canvas
   const handleImageGenerated = (url: string | null) => {
@@ -317,6 +392,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
             onDetailsTypeChange={handleDetailsTypeChange}
             onDeleteSlide={handleDeleteSlide}
             onClearImages={handleClearImages}
+            errorMessage={errorMessage} // Pass the error message to Preview
           />
           
           {/* Navigation Area with slide controls */}

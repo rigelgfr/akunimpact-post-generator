@@ -10,6 +10,7 @@ interface PreviewProps {
   onDetailsTypeChange?: (type: "char" | "item" | "const" | "info" | "other") => void;
   onDeleteSlide?: () => void;
   onClearImages?: () => void; // Add this prop for clearing images
+  errorMessage?: string | null; // Add this prop
 }
 
 const Preview = ({ 
@@ -18,7 +19,8 @@ const Preview = ({
   currentDetailsType = "char",
   onDetailsTypeChange = () => {},
   onDeleteSlide = () => {},
-  onClearImages = () => {}
+  onClearImages = () => {},
+  errorMessage = null, // Default to null if not provided
 }: PreviewProps) => {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
@@ -37,15 +39,25 @@ const Preview = ({
         </div>
         
         {/* Preview content */}
-        <div className="aspect-[4/5] bg-white shadow-md overflow-hidden">
+        <div className="aspect-[4/5] bg-white shadow-md overflow-hidden relative">
           {currentImageUrl ? (
-            <img 
-              src={currentImageUrl} 
-              alt="Generated post" 
-              className="w-full h-full object-contain select-none"
-              loading="lazy"
-              decoding="sync"
-            />
+            <div className="relative w-full h-full">
+              <img 
+                src={currentImageUrl} 
+                alt="Generated post" 
+                className="w-full h-full object-contain select-none"
+                loading="lazy"
+                decoding="sync"
+              />
+              {/* Error overlay - positioned to cover only the image */}
+              {errorMessage && (
+                <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center animate-fade-in">
+                  <div className="bg-white bg-opacity-80 px-4 py-3 rounded-md shadow-sm">
+                    <p className="text-center text-sm font-medium text-red-700">{errorMessage}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
               <p className="text-gray-500">Preview will appear here</p>
