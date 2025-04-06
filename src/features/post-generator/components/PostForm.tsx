@@ -305,7 +305,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
               
               {/* Line length warnings */}
               {hasLineWarning && (
-                <div className="absolute top-1 right-2 text-[12px] text-yellow-600">
+                <div className="absolute bottom-1 left-2 text-[12px] text-yellow-600">
                   Some lines exceed {MAX_CHARS_PER_LINE} characters
                 </div>
               )}
