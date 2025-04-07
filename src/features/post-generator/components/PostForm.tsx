@@ -242,11 +242,13 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
                       <SelectValue placeholder="Select a Character" />
                     </SelectTrigger>
                     <SelectContent className="text-base">
-                      {Object.keys(Characters[game]).map((character) => (
-                        <SelectItem key={character} value={character} className="text-base">
-                          {character}
-                        </SelectItem>
-                      ))}
+                      {Object.keys(Characters[game])
+                        .sort((a, b) => a.localeCompare(b))  // Sort alphabetically
+                        .map((character) => (
+                          <SelectItem key={character} value={character} className="text-base">
+                            {character}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
