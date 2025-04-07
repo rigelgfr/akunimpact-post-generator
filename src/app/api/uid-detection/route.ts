@@ -1,6 +1,6 @@
 import { getSession, preprocessImage, processOutput } from '@/utils/model-utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { Tensor } from 'onnxruntime-web'; // Import specific named exports
+import { Tensor } from 'onnxruntime-node'; // Import specific named exports
 
 // --- API Route Handler ---
 export async function POST(request: NextRequest) {

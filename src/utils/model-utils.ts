@@ -1,6 +1,7 @@
 import { InferenceSession, Tensor } from 'onnxruntime-node'; // <-- Use 'onnxruntime-node'
 import sharp from 'sharp';
 import path from 'path';
+import { access, readdir, constants } from 'fs/promises'; // <-- Import async functions
 
 export interface DetectionBox {
     x1: number; // Top-left x
@@ -26,6 +27,14 @@ const CLASS_NAMES = ['genshin-uid', 'hsr-uid', 'web-uid', 'zzz-uid']; // ** IMPO
 let session: InferenceSession | null = null;
 let loadingPromise: Promise<InferenceSession> | null = null;
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        // Node.js filesystem errors often include the error code in the message
+        return error.message;
+    }
+    return String(error); // Fallback for non-Error types
+}
+
 export async function getSession(): Promise<InferenceSession> {
     if (session) {
         return session;
@@ -37,41 +46,65 @@ export async function getSession(): Promise<InferenceSession> {
     loadingPromise = new Promise(async (resolve, reject) => {
         try {
             console.log('Initializing ONNX Runtime session (Node)...');
-            console.log(`Attempting to load model from: ${MODEL_PATH}`); // Log the exact path being used
-            
-            // Verify model file exists (optional but good practice)
+            console.log(`Attempting to load model from: ${MODEL_PATH}`);
+
+            // *** Check file existence and readability using access ***
             try {
-                 // Use fs.promises.access for async check if needed, or sync if acceptable during init
-                 // For simplicity here, we let InferenceSession.create handle the error if missing
-                 console.log(`Attempting to load model from: ${MODEL_PATH}`);
-                 if (!require('fs').existsSync(MODEL_PATH)) { // Basic sync check
-                    throw new Error(`Model file not found at: ${MODEL_PATH}. Ensure the path is correct and the file is deployed.`);
-                 }
-            } catch (e) {
-                console.error("Model file access check failed:", e);
-                reject(e);
-                return;
+                await access(MODEL_PATH, constants.R_OK);
+                console.log(`File check successful: ${MODEL_PATH} exists and is readable.`);
+            } catch (error: unknown) { // <-- Use unknown
+                const errorMessage = getErrorMessage(error);
+                console.error(`!!! File Check Failed !!! Model file not found or not readable at: ${MODEL_PATH}`);
+                console.error(`Underlying error: ${errorMessage}`);
+                console.error(`Current Working Directory: ${process.cwd()}`);
+
+                // Optional: Async debugging for directory contents
+                const parentDir = path.dirname(MODEL_PATH);
+                try {
+                    console.error(`Attempting to list contents of parent directory: ${parentDir}`);
+                    const parentDirContents = await readdir(parentDir);
+                    console.error(`Contents of ${parentDir}:`, parentDirContents);
+                } catch (readDirError: unknown) { // <-- Use unknown
+                    console.error(`Could not read directory ${parentDir}: ${getErrorMessage(readDirError)}`);
+                }
+                 try {
+                    const publicDir = path.join(process.cwd(), 'public');
+                    console.error(`Attempting to list contents of public directory: ${publicDir}`);
+                    const publicDirContents = await readdir(publicDir);
+                    console.error(`Contents of ${publicDir}:`, publicDirContents);
+
+                    const publicModelsDir = path.join(process.cwd(), 'public', 'models');
+                    console.error(`Attempting to list contents of public/models directory: ${publicModelsDir}`);
+                    const publicModelsDirContents = await readdir(publicModelsDir);
+                    console.error(`Contents of ${publicModelsDir}:`, publicModelsDirContents);
+
+                } catch (readDirError: unknown) { // <-- Use unknown
+                    console.error(`Could not read public directories: ${getErrorMessage(readDirError)}`);
+                }
+
+                // Reject the promise with a standard Error object
+                reject(new Error(`Model file not found or not readable at: ${MODEL_PATH}. Reason: ${errorMessage}`));
+                return; // Stop execution here
             }
 
+            // --- Create Inference Session ---
             const options: InferenceSession.SessionOptions = {
-                executionProviders: ['cpu'], // Default is usually CPU
+                executionProviders: ['cpu'],
                 graphOptimizationLevel: 'all',
             };
 
-            // Use the MODEL_PATH directly
             session = await InferenceSession.create(MODEL_PATH, options);
             console.log('ONNX Runtime session (Node) initialized successfully.');
             resolve(session);
 
-        } catch (error) {
-            console.error('Error initializing ONNX Runtime session (Node):', error);
-            // Provide more context if it's a file not found error
-            if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-                 console.error(`Model file likely not found at the specified path: ${MODEL_PATH}`);
-                 console.error(`Current working directory: ${process.cwd()}`);
-                 console.error("Ensure the 'models/best.onnx' file exists relative to the project root and is included in your deployment.");
-            }
-            reject(error);
+        } catch (error: unknown) { // <-- Use unknown for the main catch block too
+            const errorMessage = getErrorMessage(error);
+            console.error('Error initializing ONNX Runtime session (Node):', errorMessage);
+             // If the error came from InferenceSession.create, it might have useful info
+             if (error instanceof Error) {
+                 console.error("Error stack:", error.stack);
+             }
+            reject(error); // Re-reject the original error or a new Error(errorMessage)
         } finally {
             loadingPromise = null;
         }
