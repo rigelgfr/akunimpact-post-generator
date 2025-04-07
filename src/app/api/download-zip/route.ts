@@ -1,7 +1,6 @@
-// app/api/download-post-zip/route.ts
+// app/api/download-zip/route.ts
 import { NextResponse } from 'next/server';
 import JSZip from 'jszip';
-import { detectAndMaskObjects } from '@/utils/model-utils';
 
 export async function POST(request: Request) {
     try {
@@ -20,58 +19,49 @@ export async function POST(request: Request) {
             
             if (!imageUrl) continue;
             
-            // Handle image data - could be base64 or URL
-            let imageBuffer: Buffer;
+            const processedImageData = imageUrl;
             let fileExtension = '.png'; // Default
 
-            if (imageUrl.startsWith('data:')) {
-                // Handle base64 image
-                const matches = imageUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-                
-                if (!matches || matches.length !== 3) {
-                    throw new Error('Invalid base64 image format');
-                }
-                
-                const imageType = matches[1].toLowerCase();
-                const base64Data = matches[2];
-                
-                // Set file extension based on image type
-                if (imageType === 'jpeg' || imageType === 'jpg') {
-                    fileExtension = '.jpg';
-                } else if (imageType === 'png') {
-                    fileExtension = '.png';
-                }
-                
-                imageBuffer = Buffer.from(base64Data, 'base64');
-            } else {
-                // Handle URL image
-                const imageResponse = await fetch(imageUrl);
-                if (!imageResponse.ok) {
-                    throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-                }
-                
-                // Get content type for file extension
-                const contentType = imageResponse.headers.get('content-type');
-                
-                if (contentType) {
-                    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+            // Determine file extension from image data
+            if (processedImageData.startsWith('data:')) {
+                const matches = processedImageData.match(/^data:image\/([a-zA-Z]+);base64,/);
+                if (matches && matches.length >= 2) {
+                    const imageType = matches[1].toLowerCase();
+                    if (imageType === 'jpeg' || imageType === 'jpg') {
                         fileExtension = '.jpg';
-                    } else if (contentType.includes('png')) {
+                    } else if (imageType === 'png') {
                         fileExtension = '.png';
                     }
                 }
-                
-                imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            }
-
-            // Apply object detection and masking if requested (and not for thumbnails)
-            if (applyMasking) {
-                try {
-                    imageBuffer = await detectAndMaskObjects(imageBuffer, '#4086a2');
-                } catch (maskingError) {
-                    console.error('Error during object detection and masking:', maskingError);
-                    // Continue with the original image if masking fails
+            } else {
+                // For URL images, try to determine extension from content-type or URL
+                const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
+                if (imageResponse.ok) {
+                    const contentType = imageResponse.headers.get('content-type');
+                    if (contentType) {
+                        if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+                            fileExtension = '.jpg';
+                        } else if (contentType.includes('png')) {
+                            fileExtension = '.png';
+                        }
+                    }
                 }
+            }
+            
+            // Get image data as buffer
+            let imageBuffer: Buffer;
+            
+            if (processedImageData.startsWith('data:')) {
+                // Handle base64 image
+                const base64Data = processedImageData.split(',')[1];
+                imageBuffer = Buffer.from(base64Data, 'base64');
+            } else {
+                // Handle URL image
+                const imageResponse = await fetch(processedImageData);
+                if (!imageResponse.ok) {
+                    throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+                }
+                imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
             }
 
             // Add to zip with proper name

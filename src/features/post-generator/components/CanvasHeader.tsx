@@ -12,7 +12,7 @@ interface CanvasHeaderProps {
     detailsType?: "char" | "item" | "const" | "info" | "other";
   }>;
   postCode: string;
-  postType: string; // Added postType parameter
+  postType: string;
   onReset: () => void;
 }
 
@@ -30,38 +30,71 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     
     setIsDownloading(true);
     setDownloadProgress(0);
+    const totalSteps = slidesWithImages.length;
+    let currentStep = 0;
 
     try {
       // Generate ZIP filename based on postType
       let zipFilename = postCode;
       
-      // Only append type for non-'new' post types (repost, drop, etc.)
+      // Only append type for non-'new' post types
       if (postType && postType !== 'New') {
         zipFilename = `${postCode}-${postType}`;
       }
 
-      // Prepare images data for zip creation - keep original naming logic for images
-      const imagesData = slidesWithImages.map((slide) => {
+      // Process each image - applying masking when needed
+      const processedImages = [];
+      
+      for (const slide of slidesWithImages) {
         const slideType = slide.type === 'thumbnail' ? 'thumbnail' : `detail-${slide.detailsType || 'other'}`;
         const slideIndex = slides.indexOf(slide);
         const isThumbnail = slideIndex === 0 || slide.type === 'thumbnail';
+        let imageUrl = slide.imageUrl;
         
-        return { 
-          imageUrl: slide.imageUrl, 
-          fileName: `${postCode}-${slideType}-${slideIndex}`, // Keep original naming for files inside ZIP
-          applyMasking: !isThumbnail // Only apply masking to non-thumbnail images
-        };
-      });
+        // Apply masking to non-thumbnail images
+        if (!isThumbnail && imageUrl) {
+          try {
+            // Call masking API endpoint
+            const maskResponse = await fetch('/api/mask-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                imageData: imageUrl,
+                maskColor: '#4086a2'
+              })
+            });
+            
+            if (maskResponse.ok) {
+              const data = await maskResponse.json();
+              if (data.maskedImage) {
+                imageUrl = data.maskedImage;
+              }
+            }
+          } catch (maskError) {
+            console.error('Error applying mask to image:', maskError);
+            // Continue with original image if masking fails
+          }
+        }
+        
+        processedImages.push({
+          imageUrl,
+          fileName: `${postCode}-${slideType}-${slideIndex}`
+        });
+        
+        // Update progress
+        currentStep++;
+        setDownloadProgress(Math.round((currentStep / totalSteps) * 100));
+      }
 
-      // Call API to create and download zip
+      // Now create zip with processed images
       const response = await fetch('/api/download-zip', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          images: imagesData,
-          postCode: zipFilename // For the ZIP file name only
+          images: processedImages,
+          postCode: zipFilename
         }),
       });
 
@@ -146,7 +179,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
           <div className="bg-background p-8 rounded-lg w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4 text-center">Creating ZIP Archive</h2>
             <Progress value={downloadProgress} className="h-2 mb-2" />
-            <p className="text-center text-muted-foreground">Please wait...</p>
+            <p className="text-center text-muted-foreground">Processing image {downloadProgress}%</p>
           </div>
         </div>
       )}
