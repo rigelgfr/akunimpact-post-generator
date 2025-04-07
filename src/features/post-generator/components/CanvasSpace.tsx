@@ -6,7 +6,7 @@ import DetailsCanvas from "./DetailsCanvas"
 import SlideNavigation from "./SlideNavigation"
 import Preview from "./Preview"
 import { handleClipboardImage } from "../utils/image-utils" // Import the new utility
-import { getImageType, validateImageSet, preloadImage } from "../utils/image-utils";
+import { getImageType, preloadImage } from "../utils/image-utils";
 import CanvasHeader from "./CanvasHeader"
 
 interface CanvasSpaceProps {
@@ -367,7 +367,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
 
   return (
       <div className="h-full flex flex-col bg-canva-gray">
-          <CanvasHeader slides={slides} postCode={postCode} onReset={handleReset}/>
+          <CanvasHeader slides={slides} postType={postType} postCode={postCode} onReset={handleReset}/>
 
           {currentSlide.type === 'thumbnail' && (
               <ThumbnailCanvas

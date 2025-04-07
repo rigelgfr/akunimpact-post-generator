@@ -17,7 +17,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         style: {
           backgroundColor: "white",  // White background
           color: "var(--ai-cyan)",   // Text color as ai-cyan
-          borderColor: "var(--ai-cyan)",
+          borderColor: "#4086a2",
           borderWidth: "1px",
         },
         // Add additional class overrides for specific elements

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, Folder, RefreshCcw } from "lucide-react";
+import { Download, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
@@ -12,10 +12,11 @@ interface CanvasHeaderProps {
     detailsType?: "char" | "item" | "const" | "info" | "other";
   }>;
   postCode: string;
+  postType: string; // Added postType parameter
   onReset: () => void;
 }
 
-const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, onReset }) => {
+const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType, onReset }) => {
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
@@ -31,92 +32,76 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, onReset }
     setDownloadProgress(0);
 
     try {
-      // Keep track of successful and failed downloads
-      let successCount = 0;
-      let failedCount = 0;
+      // Generate ZIP filename based on postType
+      let zipFilename = postCode;
       
-      // Download each image sequentially to avoid overwhelming the server
-      for (let i = 0; i < slidesWithImages.length; i++) {
-        const slide = slidesWithImages[i];
-        if (!slide.imageUrl) continue;
-        
+      // Only append type for non-'new' post types (repost, drop, etc.)
+      if (postType && postType !== 'New') {
+        zipFilename = `${postCode}-${postType}`;
+      }
+
+      // Prepare images data for zip creation - keep original naming logic for images
+      const imagesData = slidesWithImages.map((slide) => {
         const slideType = slide.type === 'thumbnail' ? 'thumbnail' : `detail-${slide.detailsType || 'other'}`;
         const slideIndex = slides.indexOf(slide);
         const isThumbnail = slideIndex === 0 || slide.type === 'thumbnail';
         
-        // Call the API route for each image
-        const response = await fetch('/api/save-post', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            imageUrl: slide.imageUrl, 
-            postCode, 
-            fileName: `${postCode}-${slideType}-${slideIndex}`,
-            applyMasking: !isThumbnail // Only apply masking to non-thumbnail images
-          }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          failedCount++;
-          console.error(`Failed to save slide ${slideIndex}:`, result.error);
-        } else {
-          successCount++;
-        }
-
-        setDownloadProgress(Math.round(((i + 1) / slidesWithImages.length) * 100));
-      }
-      
-      // Show appropriate toast message based on results
-      if (successCount === slidesWithImages.length) {
-        toast.success(`All ${successCount} images saved successfully`, {
-          description: `Saved to posts/${postCode}`,
-        });
-      } else if (successCount > 0) {
-        toast.success(`${successCount}/${slidesWithImages.length} images saved`, {
-          description: `${failedCount} images failed to save`,
-        });
-      } else {
-        toast.error("Failed to save any images");
-      }
-      
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error("Failed to save images", {
-        description: error instanceof Error ? error.message : String(error),
+        return { 
+          imageUrl: slide.imageUrl, 
+          fileName: `${postCode}-${slideType}-${slideIndex}`, // Keep original naming for files inside ZIP
+          applyMasking: !isThumbnail // Only apply masking to non-thumbnail images
+        };
       });
-    } finally {
-      // Reset download state after a short delay to allow users to see 100%
-      setTimeout(() => {
-        setIsDownloading(false);
-        setDownloadProgress(0);
-      }, 500);
-    }
-  };
 
-  // Function to open the main posts folder
-  const openPostsFolder = async () => {
-    try {
-      const response = await fetch('/api/open-folder', {
+      // Call API to create and download zip
+      const response = await fetch('/api/download-zip', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ path: 'posts' }),
+        body: JSON.stringify({ 
+          images: imagesData,
+          postCode: zipFilename // For the ZIP file name only
+        }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to open folder');
+        throw new Error(errorData.error || 'Failed to create zip file');
       }
-    } catch (error) {
-      console.error('Failed to open folder:', error);
-      toast.error("Couldn't open folder", {
-        description: "Please navigate to the folder manually."
+
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a download link and trigger download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${zipFilename}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      // Cleanup the object URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(downloadUrl);
+      }, 100);
+
+      toast.success(`Post images downloaded successfully`, {
+        description: `Saved as ${zipFilename}.zip`,
       });
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error("Failed to download images", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      // Reset download state
+      setTimeout(() => {
+        setIsDownloading(false);
+        setDownloadProgress(0);
+      }, 500);
     }
   };
 
@@ -149,19 +134,9 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, onReset }
             variant="ghost"
             size="icon"
             className="hover:bg-ai-cyan/10"
-            title="Save all slide images"
+            title="Download all slide images as ZIP"
         >
-            <Download size={24} /> {/* Increase icon size here */}
-        </Button>
-        
-        <Button
-            onClick={openPostsFolder}
-            variant="ghost"
-            size="icon"
-            className="hover:bg-ai-cyan/10"
-            title="Open posts folder"
-        >
-            <Folder size={24} /> {/* Increase icon size here */}
+            <Download size={24} />
         </Button>
       </div>
 
@@ -169,14 +144,13 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, onReset }
       {isDownloading && (
         <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 animate-fade-in">
           <div className="bg-background p-8 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4 text-center">Saving Post Images</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">Creating ZIP Archive</h2>
             <Progress value={downloadProgress} className="h-2 mb-2" />
-            <p className="text-center text-muted-foreground">{downloadProgress}% Complete</p>
+            <p className="text-center text-muted-foreground">Please wait...</p>
           </div>
         </div>
       )}
     </>
-
   );
 };
 
