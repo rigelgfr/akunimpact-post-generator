@@ -1,8 +1,15 @@
-// src/app/detector/page.tsx
-'use client'; // Required for hooks and event handlers
+'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { DetectionBox } from '@/utils/model-utils';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Upload, Camera, AlertCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 
 export default function DetectorPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -10,14 +17,14 @@ export default function DetectorPage() {
     const [detections, setDetections] = useState<DetectionBox[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    // Optional: To store timings if the API returns them
     const [metrics, setMetrics] = useState<Record<string, number>>({});
+    const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageContainerRef = useRef<HTMLDivElement>(null);
 
     // Clean up ObjectURL
     useEffect(() => {
-        // Revoke the object URL when the component unmounts or previewUrl changes
         return () => {
             if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
@@ -29,28 +36,37 @@ export default function DetectorPage() {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
             setFile(selectedFile);
-            setError(null); // Clear previous errors
-            setDetections([]); // Clear previous detections
-            setMetrics({}); // Clear previous metrics
+            setError(null);
+            setDetections([]);
+            setMetrics({});
 
-            // Create a preview URL
             const newPreviewUrl = URL.createObjectURL(selectedFile);
-            // Revoke previous URL before setting the new one
             if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
             }
             setPreviewUrl(newPreviewUrl);
+
+            // Load image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+                setImageSize({ width: img.width, height: img.height });
+            };
+            img.src = newPreviewUrl;
         } else {
-            // No file selected or selection cancelled
             setFile(null);
             if (previewUrl) {
-                 URL.revokeObjectURL(previewUrl);
+                URL.revokeObjectURL(previewUrl);
             }
             setPreviewUrl(null);
             setDetections([]);
             setError(null);
             setMetrics({});
+            setImageSize({ width: 0, height: 0 });
         }
+    };
+
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
     };
 
     const handleDetectClick = useCallback(async () => {
@@ -61,13 +77,13 @@ export default function DetectorPage() {
 
         setIsLoading(true);
         setError(null);
-        setDetections([]); // Clear previous results
+        setDetections([]);
         setMetrics({});
 
         const formData = new FormData();
         formData.append('image', file);
 
-        const startTime = performance.now(); // Start timing frontend request
+        const startTime = performance.now();
 
         try {
             const response = await fetch('/api/uid-detection', {
@@ -75,7 +91,7 @@ export default function DetectorPage() {
                 body: formData,
             });
 
-            const endTime = performance.now(); // End timing frontend request
+            const endTime = performance.now();
 
             if (!response.ok) {
                 let errorMsg = `HTTP error! Status: ${response.status}`;
@@ -93,13 +109,11 @@ export default function DetectorPage() {
 
             const result = await response.json();
 
-            // --- Metrics Handling ---
             const apiMetrics = {
                 frontendRequestTime: parseFloat(((endTime - startTime) / 1000).toFixed(3)),
             };
-            setMetrics(apiMetrics); // Store metrics
+            setMetrics(apiMetrics);
 
-            // --- Detections Handling ---
             if (result.detections && Array.isArray(result.detections)) {
                 setDetections(result.detections);
             } else {
@@ -110,103 +124,180 @@ export default function DetectorPage() {
         } catch (err: unknown) {
             console.error("Detection API call failed:", err);
             setError(err instanceof Error ? err.message : 'An unknown error occurred during detection.');
-            setDetections([]); // Clear detections on error
-            setMetrics({}); // Clear metrics on error
+            setDetections([]);
+            setMetrics({});
         } finally {
             setIsLoading(false);
         }
-    }, [file]); // Dependency array includes 'file'
+    }, [file]);
 
-    // Helper to draw boxes (optional, can be complex)
     const renderDetections = () => {
-        if (!previewUrl || detections.length === 0) return null;
+        if (!previewUrl || detections.length === 0 || !imageContainerRef.current) return null;
+
+        // Get displayed image dimensions for scaling
+        const container = imageContainerRef.current;
+        const displayedWidth = container.clientWidth;
+        const scaleFactor = displayedWidth / imageSize.width;
 
         return (
-          <div style={{ position: 'relative', display: 'inline-block', marginTop: '10px' }}>
-            <img src={previewUrl} alt="Detection Preview" style={{ maxWidth: '100%', display: 'block' }} />
-            {detections.map((det, index) => {
-              // IMPORTANT: These coordinates are relative to the ORIGINAL image size.
-              // You'd need the image element's current display size to scale the boxes correctly.
-              // This is a simplified example assuming the display size matches original (unlikely)
-              const style: React.CSSProperties = {
-                position: 'absolute',
-                left: `${det.x1}px`, // Needs scaling based on display size vs original size
-                top: `${det.y1}px`,  // Needs scaling
-                width: `${det.x2 - det.x1}px`, // Needs scaling
-                height: `${det.y2 - det.y1}px`, // Needs scaling
-                border: '2px solid red',
-                boxSizing: 'border-box', // Important for border not adding to size
-                color: 'white',
-                background: 'rgba(255, 0, 0, 0.3)',
-                fontSize: '10px',
-                padding: '2px'
-              };
-              return (
-                <div key={index} style={style}>
-                  {det.className} ({det.score.toFixed(2)})
-                </div>
-              );
-            })}
-          </div>
+            <div className="relative inline-block mt-4 w-full" ref={imageContainerRef}>
+                <img 
+                    src={previewUrl} 
+                    alt="Detection Preview" 
+                    className="max-w-full block rounded-md shadow-md" 
+                />
+                {detections.map((det, index) => {
+                    // Scale coordinates to match displayed image size
+                    const style: React.CSSProperties = {
+                        position: 'absolute',
+                        left: `${det.x1 * scaleFactor}px`,
+                        top: `${det.y1 * scaleFactor}px`,
+                        width: `${(det.x2 - det.x1) * scaleFactor}px`,
+                        height: `${(det.y2 - det.y1) * scaleFactor}px`,
+                        border: '2px solid #ef4444',
+                        boxSizing: 'border-box',
+                        borderRadius: '4px',
+                    };
+                    
+                    return (
+                        <div key={index} style={style}>
+                            <Badge className="absolute -top-6 left-0 bg-red-500 text-white text-xs font-medium" variant="destructive">
+                                {det.className} ({det.score.toFixed(2)})
+                            </Badge>
+                        </div>
+                    );
+                })}
+            </div>
         );
     };
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>YOLOv8 Object Detector</h1>
+        <div className="container mx-auto py-8 px-4">
+            <Card className="w-full max-w-3xl mx-auto pt-0">
+                <CardHeader className="bg-ai-cyan text-white rounded-t-lg py-2">
+                    <div className="flex items-center ">
+                        <Camera className="mr-2" size={24} />
+                        <div>
+                            <CardTitle className="text-2xl font-bold">YOLOv8 Object Detector</CardTitle>
+                            <CardDescription className="text-slate-200">
+                                Upload an image to detect objects
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                
+                <CardContent className="pt-6">
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors" onClick={triggerFileInput}>
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                ref={fileInputRef}
+                                className="hidden"
+                            />
+                            <Upload size={32} className="text-slate-400 mb-2" />
+                            <p className="text-sm text-slate-600 text-center">
+                                Click to select an image<br />
+                                <span className="text-xs text-slate-500">or drag and drop</span>
+                            </p>
+                        </div>
 
-            <div>
-                <input
-                    type="file"
-                    accept="image/*" // Accept common image types
-                    onChange={handleFileChange}
-                    ref={fileInputRef}
-                    style={{ display: 'block', marginBottom: '10px' }}
-                />
-            </div>
+                        {previewUrl && (
+                            <div className="mt-4">
+                                <h3 className="text-sm font-medium text-slate-700 mb-2">Selected Image</h3>
+                                <div ref={imageContainerRef} className="max-w-full overflow-hidden rounded-md">
+                                    <img
+                                        src={previewUrl}
+                                        alt="Selected preview"
+                                        className="max-w-full rounded-md shadow-sm"
+                                    />
+                                </div>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {file?.name} ({Math.round(file?.size ? file.size / 1024 : 0)} KB)
+                                </p>
+                            </div>
+                        )}
 
-            {previewUrl && (
-                <div style={{ marginTop: '10px' }}>
-                    <img
-                        src={previewUrl}
-                        alt="Selected preview"
-                        style={{ maxWidth: '500px', maxHeight: '500px', display: 'block', marginBottom: '10px' }}
-                    />
-                </div>
-            )}
+                        {error && (
+                            <Alert variant="destructive" className="mt-4">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
 
-            <button
-                onClick={handleDetectClick}
-                disabled={!file || isLoading}
-                style={{ padding: '10px 15px', cursor: (file && !isLoading) ? 'pointer' : 'not-allowed' }}
-            >
-                {isLoading ? 'Detecting...' : 'Detect Objects'}
-            </button>
+                        <div className="flex justify-center">
+                            <Button
+                                onClick={handleDetectClick}
+                                disabled={!file || isLoading}
+                                className="w-full sm:w-auto"
+                                variant="default"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Analyzing Image...
+                                    </>
+                                ) : (
+                                    'Detect Objects'
+                                )}
+                            </Button>
+                        </div>
 
-            {isLoading && <p>Loading results...</p>}
+                        {isLoading && (
+                            <div className="mt-4">
+                                <p className="text-sm text-slate-600 mb-2">Processing image...</p>
+                                <Progress value={45} className="h-2" />
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
 
-            {error && (
-                <p style={{ color: 'red', marginTop: '10px' }}>
-                    Error: {error}
-                </p>
-            )}
+                {Object.keys(metrics).length > 0 && !isLoading && !error && (
+                    <>
+                        <Separator />
+                        <CardContent className="pt-4">
+                            <div className="bg-canva-gray p-3 rounded-md">
+                                <h3 className="text-sm font-medium text-slate-800 mb-2">Performance Metrics</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(metrics).map(([key, value]) => (
+                                        value !== undefined && (
+                                            <div key={key} className="flex justify-between text-sm">
+                                                <span className="text-slate-600">{key}:</span>
+                                                <span className="font-medium text-slate-800">{value} seconds</span>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">
+                                    Note: Backend processing times (preprocessing, inference, postprocessing) are not yet included.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </>
+                )}
 
-            {/* Display Metrics */}
-             {Object.keys(metrics).length > 0 && !isLoading && !error && (
-                <div style={{ marginTop: '20px', background: '#f0f0f0', padding: '10px' }}>
-                    <h3>Metrics:</h3>
-                    <ul>
-                        {Object.entries(metrics).map(([key, value]) => (
-                           value !== undefined && <li key={key}>{key}: {value} seconds</li>
-                        ))}
-                    </ul>
-                     <small>Note: Backend processing times (preprocessing, inference, postprocessing) are not yet included by the API.</small>
-                </div>
-            )}
+                {detections.length > 0 && !isLoading && !error && (
+                    <>
+                        <Separator />
+                        <CardContent className="pt-4">
+                            <h3 className="text-sm font-medium text-slate-800 mb-2">Detection Results</h3>
+                            {renderDetections()}
+                            <div className="mt-3">
+                                <p className="text-sm text-slate-600">
+                                    Found {detections.length} object{detections.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </>
+                )}
 
-            {/* Display Detections */}
-            {!isLoading && !error && renderDetections()}
-
+                <CardFooter className="flex justify-between text-xs text-slate-500 pt-2 pb-4">
+                    <span>Powered by YOLOv8</span>
+                    <span>v1.0.0</span>
+                </CardFooter>
+            </Card>
         </div>
     );
 }
