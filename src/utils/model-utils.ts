@@ -1,8 +1,6 @@
-import { InferenceSession, Tensor, env } from 'onnxruntime-web';
+import { InferenceSession, Tensor } from 'onnxruntime-node'; // <-- Use 'onnxruntime-node'
 import sharp from 'sharp';
 import path from 'path';
-import fs from 'fs/promises'; // Use fs.promises for async file access
-import { pathToFileURL } from 'url';
 
 export interface DetectionBox {
     x1: number; // Top-left x
@@ -16,14 +14,12 @@ export interface DetectionBox {
 
 // --- Configuration ---
 const MODEL_INPUT_SHAPE = [1, 3, 1280, 1280]; // Your model's input shape B C H W
-const MODEL_PATH = path.join(process.cwd(), 'public/models/best.onnx');
-// Define the *absolute* filesystem path for server-side loading
-const ABSOLUTE_WASM_PATH = path.join(process.cwd(), 'public', 'onnxruntime');
+
+const MODEL_PATH = path.join(process.cwd(), 'public/models/best.onnx'); // <-- Keep model outside public if only used server-side
 
 const CONFIDENCE_THRESHOLD = 0.2; // Minimum confidence to keep a detection
 const IOU_THRESHOLD = 0.45;       // IoU threshold for Non-Maximum Suppression (NMS)
 const NUM_CLASSES = 4;           // ** IMPORTANT: Adjust this to your number of classes **
-//                                   Your output shape (1, 8, 33600) suggests 8 = 4 (box) + 4 (classes)
 const CLASS_NAMES = ['genshin-uid', 'hsr-uid', 'web-uid', 'zzz-uid']; // ** IMPORTANT: Replace with your actual class names **
 
 // --- ONNX Runtime Session Cache ---
@@ -40,59 +36,44 @@ export async function getSession(): Promise<InferenceSession> {
 
     loadingPromise = new Promise(async (resolve, reject) => {
         try {
-            console.log('Initializing ONNX Runtime session...');
-
-            const wasmPathUrl = pathToFileURL(ABSOLUTE_WASM_PATH).href;
-            // Ensure the URL ends with a slash if it's a directory path,
-            // as some loaders might expect this for resolving relative paths within it.
-            const wasmPathUrlString = wasmPathUrl.endsWith('/') ? wasmPathUrl : wasmPathUrl + '/';
-
-            console.log(`Setting env.wasm.wasmPaths to URL: ${wasmPathUrlString}`);
-            // Set the path using the file:// URL string
-            env.wasm.wasmPaths = wasmPathUrlString;
-
+            console.log('Initializing ONNX Runtime session (Node)...');
+            console.log(`Attempting to load model from: ${MODEL_PATH}`); // Log the exact path being used
+            
+            // Verify model file exists (optional but good practice)
             try {
-                const wasmFile = 'ort-wasm-simd-threaded.wasm';
-                const mjsFile = 'ort-wasm-simd-threaded.mjs';
-                await fs.access(path.join(ABSOLUTE_WASM_PATH, wasmFile));
-                await fs.access(path.join(ABSOLUTE_WASM_PATH, mjsFile));
-                console.log(`Verified ${wasmFile} and ${mjsFile} exist in ${ABSOLUTE_WASM_PATH}`);
-            } catch (fileAccessError: unknown) {
-                console.error(`Error accessing WASM/MJS files in ${ABSOLUTE_WASM_PATH}:`, fileAccessError);
-                
-                // Check if fileAccessError has a path property
-                const errorPath = (fileAccessError as {path?: string}).path;
-                if (errorPath) {
-                    console.error(`!!! Please ensure '${path.basename(errorPath)}' exists in 'public/onnxruntime' directory !!!`);
-                    reject(new Error(`Missing required WASM/MJS file: ${path.basename(errorPath)}`));
-                } else {
-                    console.error("!!! Missing required WASM/MJS files !!!");
-                    reject(new Error("Missing required WASM/MJS file"));
-                }
-                return; // Stop execution
+                 // Use fs.promises.access for async check if needed, or sync if acceptable during init
+                 // For simplicity here, we let InferenceSession.create handle the error if missing
+                 console.log(`Attempting to load model from: ${MODEL_PATH}`);
+                 if (!require('fs').existsSync(MODEL_PATH)) { // Basic sync check
+                    throw new Error(`Model file not found at: ${MODEL_PATH}. Ensure the path is correct and the file is deployed.`);
+                 }
+            } catch (e) {
+                console.error("Model file access check failed:", e);
+                reject(e);
+                return;
             }
 
-            console.log(`Loading model from: ${MODEL_PATH}`);
-            // Load the model directly from the filesystem path server-side
-            const modelData = await fs.readFile(MODEL_PATH);
-            const modelArrayBuffer = modelData.buffer.slice(modelData.byteOffset, modelData.byteOffset + modelData.byteLength);
-
-            // For server-side (Node.js) WASM, execution providers might need specific setup.
-            // 'wasm' is usually the default/fallback. Using 'cpu' might be faster if node bindings are installed,
-            // but let's stick to WASM as requested.
             const options: InferenceSession.SessionOptions = {
-                 executionProviders: ['wasm'], // Explicitly use wasm
-                 graphOptimizationLevel: 'all',
+                executionProviders: ['cpu'], // Default is usually CPU
+                graphOptimizationLevel: 'all',
             };
 
-            session = await InferenceSession.create(modelArrayBuffer, options);
-            console.log('ONNX Runtime session initialized successfully.');
+            // Use the MODEL_PATH directly
+            session = await InferenceSession.create(MODEL_PATH, options);
+            console.log('ONNX Runtime session (Node) initialized successfully.');
             resolve(session);
+
         } catch (error) {
-            console.error('Error initializing ONNX Runtime session:', error);
+            console.error('Error initializing ONNX Runtime session (Node):', error);
+            // Provide more context if it's a file not found error
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+                 console.error(`Model file likely not found at the specified path: ${MODEL_PATH}`);
+                 console.error(`Current working directory: ${process.cwd()}`);
+                 console.error("Ensure the 'models/best.onnx' file exists relative to the project root and is included in your deployment.");
+            }
             reject(error);
         } finally {
-            loadingPromise = null; // Clear the promise once resolved or rejected
+            loadingPromise = null;
         }
     });
 
