@@ -241,7 +241,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
                     <SelectTrigger className="flex-1 text-base border-input focus:border-ai-cyan focus:ring-1 focus:ring-ai-cyan">
                       <SelectValue placeholder="Select a Character" />
                     </SelectTrigger>
-                    <SelectContent className="text-base">
+                    <SelectContent className="text-base max-h-[300px] overflow-y-auto">
                       {Object.keys(Characters[game])
                         .sort((a, b) => a.localeCompare(b))  // Sort alphabetically
                         .map((character) => (
