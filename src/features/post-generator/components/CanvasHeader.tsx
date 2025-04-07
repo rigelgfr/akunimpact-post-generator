@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import {
+    getClientSession,
+    preprocessImageForClient,
+    processOutput,
+    DetectionBox
+} from '@/utils/client-model-utils';
+import { Tensor } from 'onnxruntime-web';
 
 interface CanvasHeaderProps {
   slides: Array<{
@@ -19,6 +26,90 @@ interface CanvasHeaderProps {
 const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType, onReset }) => {
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+
+  // Function to detect objects in an image and apply masking
+  const detectAndMaskImage = useCallback(async (imageUrl: string, maskColor: string = '#4086a2'): Promise<string> => {
+    try {
+      // 1. Load image from URL or base64
+      let imageBlob: Blob;
+      
+      if (imageUrl.startsWith('data:')) {
+        // Convert base64 to blob
+        const fetchResponse = await fetch(imageUrl);
+        imageBlob = await fetchResponse.blob();
+      } else {
+        // Fetch from URL
+        const fetchResponse = await fetch(imageUrl);
+        if (!fetchResponse.ok) {
+          throw new Error(`Failed to fetch image: ${fetchResponse.statusText}`);
+        }
+        imageBlob = await fetchResponse.blob();
+      }
+      
+      // Convert blob to file for processing
+      const imageFile = new File([imageBlob], "image.png", { type: imageBlob.type });
+      
+      // 2. Get model session
+      const session = await getClientSession();
+      
+      // 3. Preprocess the image
+      const { tensor, originalWidth, originalHeight } = await preprocessImageForClient(imageFile);
+      
+      // 4. Run inference
+      const feeds: Record<string, Tensor> = {};
+      feeds[session.inputNames[0]] = tensor;
+      const results = await session.run(feeds);
+      const outputTensor = results[session.outputNames[0]];
+      if (!outputTensor) throw new Error('Output tensor not found in results');
+      
+      // 5. Process output to get detections
+      const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight);
+      
+      // 6. Draw mask on image using Canvas
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+        image.src = imageUrl;
+      });
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+      
+      // Draw original image
+      ctx.drawImage(image, 0, 0);
+      
+      // Apply masking for each detection
+      if (detectedBoxes.length > 0) {
+        ctx.fillStyle = maskColor;
+        
+        for (const box of detectedBoxes) {
+          const x = box.x1;
+          const y = box.y1;
+          const width = box.x2 - box.x1;
+          const height = box.y2 - box.y1;
+          
+          // Create rectangle with some transparency
+          ctx.fillRect(x, y, width, height);
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+      }
+      
+      // Convert canvas to base64
+      const maskedImageBase64 = canvas.toDataURL('image/png');
+      return maskedImageBase64;
+      
+    } catch (error) {
+      console.error('Error in client-side object detection:', error);
+      // Return original image if detection fails
+      return imageUrl;
+    }
+  }, []);
 
   const downloadAllImages = async () => {
     // Filter out slides with no imageUrl
@@ -51,27 +142,13 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         const isThumbnail = slideIndex === 0 || slide.type === 'thumbnail';
         let imageUrl = slide.imageUrl;
         
-        // Apply masking to non-thumbnail images
+        // Apply client-side detection and masking to non-thumbnail images
         if (!isThumbnail && imageUrl) {
           try {
-            // Call masking API endpoint
-            const maskResponse = await fetch('/api/mask-image', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                imageData: imageUrl,
-                maskColor: '#4086a2'
-              })
-            });
-            
-            if (maskResponse.ok) {
-              const data = await maskResponse.json();
-              if (data.maskedImage) {
-                imageUrl = data.maskedImage;
-              }
-            }
+            // Process image with client-side detection
+            imageUrl = await detectAndMaskImage(imageUrl, '#4086a2');
           } catch (maskError) {
-            console.error('Error applying mask to image:', maskError);
+            console.error('Error applying client-side masking:', maskError);
             // Continue with original image if masking fails
           }
         }
@@ -86,7 +163,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         setDownloadProgress(Math.round((currentStep / totalSteps) * 100));
       }
 
-      // Now create zip with processed images
+      // Now create zip with processed images - using existing API endpoint
       const response = await fetch('/api/download-zip', {
         method: 'POST',
         headers: {

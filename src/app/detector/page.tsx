@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { DetectionBox } from '@/utils/model-utils';
+import {
+    getClientSession,
+    preprocessImageForClient,
+    processOutput,
+    DetectionBox // Import the interface
+} from '@/utils/client-model-utils'; // Adjust path as needed
+import { Tensor } from 'onnxruntime-web';
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +23,7 @@ export default function DetectorPage() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [detections, setDetections] = useState<DetectionBox[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoadingModel, setIsLoadingModel] = useState<boolean>(false); // Specific indicator for model loading
     const [error, setError] = useState<string | null>(null);
     const [metrics, setMetrics] = useState<Record<string, number>>({});
     const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -39,6 +47,7 @@ export default function DetectorPage() {
             setError(null);
             setDetections([]);
             setMetrics({});
+            setIsLoadingModel(false); // Reset model loading state
 
             const newPreviewUrl = URL.createObjectURL(selectedFile);
             if (previewUrl) {
@@ -75,61 +84,71 @@ export default function DetectorPage() {
             return;
         }
 
-        setIsLoading(true);
+        setIsLoading(true); // Indicate general processing start
+        setIsLoadingModel(true); // Assume model might need loading initially
         setError(null);
         setDetections([]);
         setMetrics({});
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        const startTime = performance.now();
+        let sessionStartTime = 0, preprocessEndTime = 0, inferenceEndTime = 0, postprocessEndTime = 0;
 
         try {
-            const response = await fetch('/api/uid-detection', {
-                method: 'POST',
-                body: formData,
-            });
+            // 1. Get Session (Loads/caches model+WASM)
+            sessionStartTime = performance.now();
+            console.log("Requesting client session...");
+            const session = await getClientSession();
+            setIsLoadingModel(false); // Model is ready
+            console.log("Client session ready.");
 
-            const endTime = performance.now();
-
-            if (!response.ok) {
-                let errorMsg = `HTTP error! Status: ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.error || errorData.message || errorMsg;
-                    if (errorData.details) {
-                        errorMsg += ` Details: ${errorData.details}`;
-                    }
-                } catch (jsonError) {
-                    // Ignore if response is not JSON
-                }
-                throw new Error(errorMsg);
+            // 2. Preprocess Image directly from File object
+            console.log("Preprocessing image...");
+            const { tensor, originalWidth, originalHeight } = await preprocessImageForClient(file);
+            // Update image size from actual preprocessing step if needed, though should match preview
+            if(imageSize.width !== originalWidth || imageSize.height !== originalHeight) {
+                console.warn("Image size mismatch between preview and preprocessing. Using preprocessing size.");
+                setImageSize({ width: originalWidth, height: originalHeight });
             }
+            preprocessEndTime = performance.now();
+            console.log("Preprocessing complete.");
 
-            const result = await response.json();
+            // 3. Run Inference
+            console.log("Running inference...");
+            const feeds: Record<string, Tensor> = {};
+            feeds[session.inputNames[0]] = tensor;
+            const results = await session.run(feeds);
+            inferenceEndTime = performance.now();
+            const outputTensor = results[session.outputNames[0]];
+            if (!outputTensor) throw new Error('Output tensor not found in results');
+            console.log("Inference complete.");
 
-            const apiMetrics = {
-                frontendRequestTime: parseFloat(((endTime - startTime) / 1000).toFixed(3)),
+            // 4. Process Output
+            console.log("Processing output...");
+            const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight);
+            postprocessEndTime = performance.now();
+            console.log("Output processing complete. Detections:", detectedBoxes);
+
+            // 5. Update State
+            setDetections(detectedBoxes);
+
+            // Calculate client-side metrics
+            const clientMetrics = {
+                sessionLoadTime: parseFloat(((preprocessEndTime - sessionStartTime) / 1000).toFixed(3)), // Includes potential model load
+                preprocessTime: parseFloat(((preprocessEndTime - sessionStartTime) / 1000).toFixed(3)), // More accurate preprocess time start
+                inferenceTime: parseFloat(((inferenceEndTime - preprocessEndTime) / 1000).toFixed(3)),
+                postprocessTime: parseFloat(((postprocessEndTime - inferenceEndTime) / 1000).toFixed(3)),
+                totalClientTime: parseFloat(((postprocessEndTime - sessionStartTime) / 1000).toFixed(3)),
             };
-            setMetrics(apiMetrics);
-
-            if (result.detections && Array.isArray(result.detections)) {
-                setDetections(result.detections);
-            } else {
-                console.warn("API response format unexpected:", result);
-                setError("Received unexpected data format from API.");
-            }
+            setMetrics(clientMetrics);
 
         } catch (err: unknown) {
-            console.error("Detection API call failed:", err);
+            console.error("Client-side detection failed:", err);
             setError(err instanceof Error ? err.message : 'An unknown error occurred during detection.');
             setDetections([]);
             setMetrics({});
+            setIsLoadingModel(false); // Ensure loading state is off on error
         } finally {
-            setIsLoading(false);
+            setIsLoading(false); // General processing finished (success or fail)
         }
-    }, [file]);
+    }, [file, imageSize.height, imageSize.width]); // Add imageSize dependency if preprocessing relies on it indirectly
 
     const renderDetections = () => {
         if (!previewUrl || detections.length === 0 || !imageContainerRef.current) return null;
@@ -234,14 +253,10 @@ export default function DetectorPage() {
                                 className="w-full sm:w-auto"
                                 variant="default"
                             >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Analyzing Image...
-                                    </>
-                                ) : (
-                                    'Detect Objects'
-                                )}
+                                {(isLoading && isLoadingModel) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {(isLoading && isLoadingModel) ? 'Loading Model...' :
+                                (isLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {(isLoading && !isLoadingModel) ? 'Processing...' : 'Detect UIDs'}
                             </Button>
                         </div>
 

@@ -25,8 +25,8 @@ export default function Home() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             AKUNIMPACT Post Generator
           </h1>
-          <p className="text-slate-600 max-w-sm mx-auto">
-            Generate  posts or test the UID detection model on your own images.
+          <p className="text-slate-600 max-w-xl mx-auto">
+            Generate  posts or test the UID detection model on your own images. Model is client-side and runs in the browser, so make sure your device is strong enough.
           </p>
         </div>
 

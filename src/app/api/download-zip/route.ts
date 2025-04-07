@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         
         // Process each image
         for (let i = 0; i < images.length; i++) {
-            const { imageUrl, fileName, applyMasking = false } = images[i];
+            const { imageUrl, fileName } = images[i];
             
             if (!imageUrl) continue;
             
