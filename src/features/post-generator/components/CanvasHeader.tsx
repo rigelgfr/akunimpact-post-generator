@@ -113,7 +113,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
 
   const downloadAllImages = async () => {
     // Filter out slides with no imageUrl
-    const slidesWithImages = slides.filter(slide => slide.imageUrl);
+    const slidesWithImages = slides.filter(slide => slide.imageUrl !== null);
     
     if (slidesWithImages.length === 0 || isDownloading) {
       return;
@@ -125,15 +125,18 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     let currentStep = 0;
   
     try {
-      // Generate ZIP filename based on postType
-      let zipFilename = postCode;
+      // Generate filename base based on postType
+      let filenameBase = postCode;
       
       // Only append type for non-'new' post types
       if (postType && postType !== 'New') {
-        zipFilename = `${postCode}-${postType}`;
+        filenameBase = `${postCode}-${postType}`;
       }
   
-      // Process each image - applying masking when needed
+      // Check if running on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Process each image with masking when needed
       const processedImages = [];
       
       for (const slide of slidesWithImages) {
@@ -142,10 +145,13 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         const isThumbnail = slideIndex === 0 || slide.type === 'thumbnail';
         let imageUrl = slide.imageUrl;
         
+        // Skip if imageUrl is null
+        if (imageUrl === null) continue;
+        
         // Apply client-side detection and masking to non-thumbnail images
         if (!isThumbnail && imageUrl) {
           try {
-            // Process image with client-side detection
+            // Process image with client-side detection - keeping full quality
             imageUrl = await detectAndMaskImage(imageUrl, '#4086a2');
           } catch (maskError) {
             console.error('Error applying client-side masking:', maskError);
@@ -153,80 +159,57 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
           }
         }
         
+        const fileName = `${filenameBase}-${slideType}-${slideIndex}`;
+        
         processedImages.push({
           imageUrl,
-          fileName: `${postCode}-${slideType}-${slideIndex}`
+          fileName
         });
+        
+        // For mobile devices, download immediately after processing
+        if (isMobile) {
+          try {
+            await downloadSingleImage(imageUrl, fileName);
+          } catch (downloadError) {
+            console.error('Error downloading single image:', downloadError);
+          }
+        }
         
         // Update progress
         currentStep++;
         setDownloadProgress(Math.round((currentStep / totalSteps) * 100));
       }
   
-      // Check if running on mobile
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  
-      // Now create zip with processed images - using existing API endpoint
-      const response = await fetch('/api/download-zip', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          images: processedImages,
-          postCode: zipFilename,
-          isMobile: isMobile
-        }),
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to download images');
-      }
-  
-      if (isMobile) {
-        // Handle mobile - download individual images
-        const result = await response.json();
-        
-        if (result.success && result.images) {
-          // Download each image individually
-          let downloadedCount = 0;
+      // For desktop, create and download a single zip
+      if (!isMobile) {
+        try {
+          await downloadImagesAsZip(processedImages, filenameBase);
+        } catch (zipError) {
+          console.error('Error creating zip file:', zipError);
           
-          for (const image of result.images) {
+          // Fallback to downloading images individually on desktop too
+          let downloadedCount = 0;
+          for (const image of processedImages) {
             try {
-              // Create an invisible link to trigger download for each image
-              await downloadImageToMobileGallery(image.imageUrl, `${image.fileName}.png`);
+              await downloadSingleImage(image.imageUrl, image.fileName);
               downloadedCount++;
-            } catch (err) {
-              console.error('Error downloading individual image:', err);
+            } catch (singleError) {
+              console.error('Error in fallback download:', singleError);
             }
           }
           
-          toast.success(`${downloadedCount} images saved to gallery`, {
-            description: `Your images have been saved`,
-          });
-        } else if (result.error) {
-          throw new Error(result.error);
+          if (downloadedCount > 0) {
+            toast.success(`${downloadedCount} images downloaded individually`, {
+              description: "ZIP creation failed, used fallback method",
+            });
+          } else {
+            throw new Error("Failed to download images using any method");
+          }
         }
       } else {
-        // Desktop - handle ZIP download
-        const blob = await response.blob();
-        const downloadUrl = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `${zipFilename}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        
-        // Cleanup
-        setTimeout(() => {
-          URL.revokeObjectURL(downloadUrl);
-        }, 100);
-        
-        toast.success(`Post images downloaded successfully`, {
-          description: `Saved as ${zipFilename}.zip`,
+        // For mobile, we've already downloaded the images individually
+        toast.success(`${processedImages.length} images downloaded`, {
+          description: "Images saved to your device",
         });
       }
       
@@ -244,14 +227,14 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     }
   };
   
-  // Helper function to download an image to mobile gallery
-  const downloadImageToMobileGallery = async (imageUrl: string, fileName: string): Promise<void> => {
+  // Helper function to download a single image
+  const downloadSingleImage = async (imageUrl: string, fileName: string): Promise<void> => {
     // For base64 images
     if (imageUrl.startsWith('data:')) {
       // Create a link element
       const a = document.createElement('a');
       a.href = imageUrl;
-      a.download = fileName;
+      a.download = `${fileName}.png`;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -269,7 +252,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName;
+    a.download = `${fileName}.png`;
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -278,6 +261,44 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     await new Promise(resolve => setTimeout(resolve, 100));
     URL.revokeObjectURL(url);
     document.body.removeChild(a);
+  };
+  
+  // Helper function to download images as a ZIP file
+  const downloadImagesAsZip = async (images: Array<{imageUrl: string, fileName: string}>, zipFilename: string): Promise<void> => {
+    const response = await fetch('/api/download-zip', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        images,
+        postCode: zipFilename
+      }),
+    });
+  
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create zip file');
+    }
+  
+    const blob = await response.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `${zipFilename}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    // Cleanup
+    setTimeout(() => {
+      URL.revokeObjectURL(downloadUrl);
+    }, 100);
+    
+    toast.success(`Post images downloaded successfully`, {
+      description: `Saved as ${zipFilename}.zip`,
+    });
   };
 
   const handleReset = () => {
