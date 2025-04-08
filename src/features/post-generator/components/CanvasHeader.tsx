@@ -272,7 +272,8 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
       },
       body: JSON.stringify({ 
         images,
-        postCode: zipFilename
+        postCode: zipFilename,
+        isMobile: false
       }),
     });
   
