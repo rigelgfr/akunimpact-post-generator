@@ -53,7 +53,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
       const session = await getClientSession();
       
       // 3. Preprocess the image
-      const { tensor, originalWidth, originalHeight } = await preprocessImageForClient(imageFile);
+      const { tensor, originalWidth, originalHeight, padInfo } = await preprocessImageForClient(imageFile);
       
       // 4. Run inference
       const feeds: Record<string, Tensor> = {};
@@ -63,7 +63,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
       if (!outputTensor) throw new Error('Output tensor not found in results');
       
       // 5. Process output to get detections
-      const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight);
+      const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight, padInfo);
       
       // 6. Draw mask on image using Canvas
       const image = new Image();

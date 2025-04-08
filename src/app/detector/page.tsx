@@ -101,7 +101,7 @@ export default function DetectorPage() {
 
             // 2. Preprocess Image directly from File object
             console.log("Preprocessing image...");
-            const { tensor, originalWidth, originalHeight } = await preprocessImageForClient(file);
+            const { tensor, originalWidth, originalHeight, padInfo } = await preprocessImageForClient(file);
             // Update image size from actual preprocessing step if needed, though should match preview
             if(imageSize.width !== originalWidth || imageSize.height !== originalHeight) {
                 console.warn("Image size mismatch between preview and preprocessing. Using preprocessing size.");
@@ -122,7 +122,7 @@ export default function DetectorPage() {
 
             // 4. Process Output
             console.log("Processing output...");
-            const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight);
+            const detectedBoxes: DetectionBox[] = processOutput(outputTensor, originalWidth, originalHeight, padInfo);
             postprocessEndTime = performance.now();
             console.log("Output processing complete. Detections:", detectedBoxes);
 
@@ -150,21 +150,20 @@ export default function DetectorPage() {
         }
     }, [file, imageSize.height, imageSize.width]); // Add imageSize dependency if preprocessing relies on it indirectly
 
-    const renderDetections = () => {
+    const renderDetections = useCallback(() => {
         if (!previewUrl || detections.length === 0 || !imageContainerRef.current) return null;
 
         // Get displayed image dimensions for scaling
         const container = imageContainerRef.current;
         const displayedWidth = container.clientWidth;
-        const scaleFactor = displayedWidth / imageSize.width;
+        const displayedImage = container.querySelector('img');
+        
+        // Use actual rendered image width instead of container width for more accurate scaling
+        const actualDisplayedWidth = displayedImage?.clientWidth || displayedWidth;
+        const scaleFactor = actualDisplayedWidth / imageSize.width;
 
         return (
-            <div className="relative inline-block mt-4 w-full" ref={imageContainerRef}>
-                <img 
-                    src={previewUrl} 
-                    alt="Detection Preview" 
-                    className="max-w-full block rounded-md shadow-md" 
-                />
+            <>
                 {detections.map((det, index) => {
                     // Scale coordinates to match displayed image size
                     const style: React.CSSProperties = {
@@ -186,9 +185,9 @@ export default function DetectorPage() {
                         </div>
                     );
                 })}
-            </div>
+            </>
         );
-    };
+    }, [previewUrl, detections, imageSize.width]);
 
     return (
         <div className="container mx-auto py-8 px-4">
@@ -197,9 +196,9 @@ export default function DetectorPage() {
                     <div className="flex items-center ">
                         <Camera className="mr-2" size={24} />
                         <div>
-                            <CardTitle className="text-2xl font-bold">YOLOv8 Object Detector</CardTitle>
+                            <CardTitle className="text-2xl font-bold">YOLOv8 UID Detector</CardTitle>
                             <CardDescription className="text-slate-200">
-                                Upload an image to detect objects
+                                Upload an image to detect UIDs
                             </CardDescription>
                         </div>
                     </div>
@@ -225,12 +224,19 @@ export default function DetectorPage() {
                         {previewUrl && (
                             <div className="mt-4">
                                 <h3 className="text-sm font-medium text-slate-700 mb-2">Selected Image</h3>
-                                <div ref={imageContainerRef} className="max-w-full overflow-hidden rounded-md">
+                                <div ref={imageContainerRef} className="max-w-full overflow-hidden rounded-md relative">
                                     <img
                                         src={previewUrl}
                                         alt="Selected preview"
                                         className="max-w-full rounded-md shadow-sm"
+                                        onLoad={() => {
+                                            // Force a re-render after image loads to ensure correct scaling
+                                            if (detections.length > 0) {
+                                                setDetections([...detections]);
+                                            }
+                                        }}
                                     />
+                                    {renderDetections()}
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">
                                     {file?.name} ({Math.round(file?.size ? file.size / 1024 : 0)} KB)
@@ -253,10 +259,14 @@ export default function DetectorPage() {
                                 className="w-full sm:w-auto"
                                 variant="default"
                             >
-                                {(isLoading && isLoadingModel) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {(isLoading && isLoadingModel) ? 'Loading Model...' :
-                                (isLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {(isLoading && !isLoadingModel) ? 'Processing...' : 'Detect UIDs'}
+                                {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    {isLoadingModel ? 'Loading Model...' : 'Processing...'}
+                                </>
+                                ) : (
+                                'Detect UIDs'
+                                )}
                             </Button>
                         </div>
 
@@ -275,7 +285,7 @@ export default function DetectorPage() {
                         <CardContent className="pt-4">
                             <div className="bg-canva-gray p-3 rounded-md">
                                 <h3 className="text-sm font-medium text-slate-800 mb-2">Performance Metrics</h3>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                                     {Object.entries(metrics).map(([key, value]) => (
                                         value !== undefined && (
                                             <div key={key} className="flex justify-between text-sm">
@@ -285,25 +295,25 @@ export default function DetectorPage() {
                                         )
                                     ))}
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">
-                                    Note: Backend processing times (preprocessing, inference, postprocessing) are not yet included.
-                                </p>
                             </div>
                         </CardContent>
                     </>
                 )}
 
-                {detections.length > 0 && !isLoading && !error && (
+                {!isLoading && !error && (
                     <>
                         <Separator />
                         <CardContent className="pt-4">
                             <h3 className="text-sm font-medium text-slate-800 mb-2">Detection Results</h3>
-                            {renderDetections()}
-                            <div className="mt-3">
-                                <p className="text-sm text-slate-600">
-                                    Found {detections.length} object{detections.length !== 1 ? 's' : ''}
-                                </p>
-                            </div>
+                            {detections.length > 0 ? (
+                                <div className="mt-3">
+                                    <p className="text-sm text-slate-600">
+                                        Found {detections.length} object{detections.length !== 1 ? 's' : ''}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-600">No UIDs detected</p>
+                            )}
                         </CardContent>
                     </>
                 )}
