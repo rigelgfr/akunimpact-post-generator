@@ -35,38 +35,48 @@ export async function POST(request: Request) {
                 }
             } else {
                 // For URL images, try to determine extension from content-type or URL
-                const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
-                if (imageResponse.ok) {
-                    const contentType = imageResponse.headers.get('content-type');
-                    if (contentType) {
-                        if (contentType.includes('jpeg') || contentType.includes('jpg')) {
-                            fileExtension = '.jpg';
-                        } else if (contentType.includes('png')) {
-                            fileExtension = '.png';
+                try {
+                    const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
+                    if (imageResponse.ok) {
+                        const contentType = imageResponse.headers.get('content-type');
+                        if (contentType) {
+                            if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+                                fileExtension = '.jpg';
+                            } else if (contentType.includes('png')) {
+                                fileExtension = '.png';
+                            }
                         }
                     }
+                } catch (err) {
+                    console.error('Error getting content type:', err);
+                    // Continue with default extension
                 }
             }
             
             // Get image data as buffer
             let imageBuffer: Buffer;
             
-            if (processedImageData.startsWith('data:')) {
-                // Handle base64 image
-                const base64Data = processedImageData.split(',')[1];
-                imageBuffer = Buffer.from(base64Data, 'base64');
-            } else {
-                // Handle URL image
-                const imageResponse = await fetch(processedImageData);
-                if (!imageResponse.ok) {
-                    throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+            try {
+                if (processedImageData.startsWith('data:')) {
+                    // Handle base64 image
+                    const base64Data = processedImageData.split(',')[1];
+                    imageBuffer = Buffer.from(base64Data, 'base64');
+                } else {
+                    // Handle URL image
+                    const imageResponse = await fetch(processedImageData);
+                    if (!imageResponse.ok) {
+                        throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+                    }
+                    imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
                 }
-                imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            }
 
-            // Add to zip with proper name
-            const imageName = `${fileName}${fileExtension}`;
-            zip.file(imageName, imageBuffer);
+                // Add to zip with proper name
+                const imageName = `${fileName}${fileExtension}`;
+                zip.file(imageName, imageBuffer);
+            } catch (err) {
+                console.error(`Error processing image ${i}:`, err);
+                // Continue with other images
+            }
         }
         
         // Generate the zip file
@@ -78,12 +88,26 @@ export async function POST(request: Request) {
             }
         });
 
-        // Create response with appropriate headers
-        const response = new NextResponse(zipBuffer);
-        response.headers.set('Content-Type', 'application/zip');
-        response.headers.set('Content-Disposition', `attachment; filename="${postCode}.zip"`);
+        // For mobile compatibility, check if the client is expecting binary or JSON
+        const userAgent = request.headers.get('user-agent') || '';
+        const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
         
-        return response;
+        if (isMobileBrowser) {
+            // For mobile browsers, return a JSON with base64 encoded zip
+            return NextResponse.json({
+                success: true,
+                filename: `${postCode}.zip`,
+                data: zipBuffer.toString('base64'),
+                contentType: 'application/zip'
+            });
+        } else {
+            // For desktop browsers, return binary data directly
+            const response = new NextResponse(zipBuffer);
+            response.headers.set('Content-Type', 'application/zip');
+            response.headers.set('Content-Disposition', `attachment; filename="${postCode}.zip"`);
+            response.headers.set('Cache-Control', 'no-store');
+            return response;
+        }
 
     } catch (error) {
         console.error('Error creating ZIP file:', error);

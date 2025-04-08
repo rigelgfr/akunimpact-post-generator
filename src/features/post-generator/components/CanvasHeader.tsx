@@ -180,22 +180,65 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         throw new Error(errorData.error || 'Failed to create zip file');
       }
 
-      // Get the blob from the response
-      const blob = await response.blob();
+      // Check the content type to determine response format
+      const contentType = response.headers.get('Content-Type');
       
-      // Create a download link and trigger download
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${zipFilename}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      // Cleanup the object URL
-      setTimeout(() => {
-        window.URL.revokeObjectURL(downloadUrl);
-      }, 100);
+      if (contentType && contentType.includes('application/json')) {
+        // Handle JSON response (for mobile)
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Convert base64 to blob
+          const byteCharacters = atob(result.data);
+          const byteArrays = [];
+          
+          for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512);
+            
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i);
+            }
+            
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+          }
+          
+          const blob = new Blob(byteArrays, { type: 'application/zip' });
+          const downloadUrl = URL.createObjectURL(blob);
+          
+          // Create download link
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `${zipFilename}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          
+          // Cleanup
+          setTimeout(() => {
+            URL.revokeObjectURL(downloadUrl);
+          }, 100);
+        } else if (result.error) {
+          throw new Error(result.error);
+        }
+      } else {
+        // Handle binary response (for desktop)
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${zipFilename}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        
+        // Cleanup
+        setTimeout(() => {
+          URL.revokeObjectURL(downloadUrl);
+        }, 100);
+      }
 
       toast.success(`Post images downloaded successfully`, {
         description: `Saved as ${zipFilename}.zip`,
