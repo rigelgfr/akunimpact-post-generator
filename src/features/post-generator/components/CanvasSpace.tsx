@@ -61,6 +61,120 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   // Generate a unique ID for new slides
   const generateSlideId = () => `slide-${slides.length + 1}`;
 
+  // Add this function in the CanvasSpace component
+  const handleAddImages = async (files: FileList) => {
+    if (!files.length || currentSlide.type !== 'details') return;
+    
+    // Convert FileList to array for easier handling
+    const fileArray = Array.from(files);
+    
+    // Process each file
+    for (const file of fileArray) {
+      try {
+        // Create blob URL for the file
+        const imageUrl = URL.createObjectURL(file);
+        
+        // Create Image object to get dimensions
+        const newImage = await preloadImage(imageUrl);
+        
+        // Get current images from the slide
+        const currentUserImages = slides[currentSlideIndex].userImages || [];
+        const newImageType = getImageType(newImage);
+        
+        // Load all existing images to check compatibility
+        const existingImages: HTMLImageElement[] = [];
+        for (const imgUrl of currentUserImages) {
+          try {
+            const img = await preloadImage(imgUrl);
+            existingImages.push(img);
+          } catch (err) {
+            console.error("Failed to load existing image:", err);
+          }
+        }
+        
+        // Create a test set including the new image
+        const testImages = [...existingImages, newImage];
+        
+        // Check if adding this image would violate our rules
+        if (newImageType === 'portrait-mobile' && testImages.length > 2) {
+          setErrorMessage("Maximum of 2 portrait mobile images allowed");
+          URL.revokeObjectURL(imageUrl); // Clean up
+          continue;
+        }
+
+        // Check for portrait desktop limit (1 image)
+        if (newImageType === 'portrait-desktop' && testImages.length > 1) {
+          setErrorMessage("Maximum of 1 portrait desktop image allowed");
+          URL.revokeObjectURL(imageUrl); // Clean up
+          continue;
+        }
+        
+        // Check for landscape limits
+        const firstType = existingImages.length > 0 ? getImageType(existingImages[0]) : newImageType;
+        const allSameType = testImages.every(img => getImageType(img) === firstType);
+        const allLandscapes = testImages.every(img => {
+          const type = getImageType(img);
+          return type === 'landscape-mobile' || type === 'landscape-desktop';
+        });
+        
+        if (firstType === 'landscape-mobile' && testImages.length > 3 && allSameType) {
+          setErrorMessage("Maximum of 3 landscape mobile images allowed");
+          URL.revokeObjectURL(imageUrl);
+          continue;
+        }
+        
+        if (firstType === 'landscape-desktop' && testImages.length > 2 && allSameType) {
+          setErrorMessage("Maximum of 2 landscape desktop images allowed");
+          URL.revokeObjectURL(imageUrl);
+          continue;
+        }
+        
+        if (allLandscapes && !allSameType && testImages.length > 2) {
+          setErrorMessage("Maximum of 2 mixed landscape images allowed");
+          URL.revokeObjectURL(imageUrl);
+          continue;
+        }
+        
+        // Check if image types are compatible
+        if (!allSameType && !allLandscapes) {
+          setErrorMessage("Images must be all portrait mobile, all landscape mobile, all landscape desktop, or mixed landscapes");
+          URL.revokeObjectURL(imageUrl);
+          continue;
+        }
+        
+        // If we made it here, the image is valid
+        console.log("Image validation passed, adding to slide");
+        
+        // Update the current slide with the new image
+        setSlides(prevSlides => {
+          const updatedSlides = [...prevSlides];
+          const currentUserImages = updatedSlides[currentSlideIndex].userImages || [];
+          
+          updatedSlides[currentSlideIndex] = {
+            ...updatedSlides[currentSlideIndex],
+            userImages: [...currentUserImages, imageUrl]
+          };
+          
+          return updatedSlides;
+        });
+      } catch (error) {
+        console.error("Error processing image:", error);
+        setErrorMessage("Failed to process image");
+      }
+    }
+    
+    // Trigger a re-render of the canvas with the new images
+    setTimeout(() => {
+      // This will trigger the DetailsCanvas to re-render
+      const detailsCanvas = document.querySelector('canvas');
+      if (detailsCanvas) {
+        console.log("Triggering canvas re-render");
+        const event = new Event('canvasUpdate');
+        detailsCanvas.dispatchEvent(event);
+      }
+    }, 100);
+  };
+
   // Setup paste event listener
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
@@ -397,6 +511,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
             currentSlide={currentSlide.type}
             currentDetailsType={currentSlide.detailsType || "char"}
             onDetailsTypeChange={handleDetailsTypeChange}
+            onAddImages={handleAddImages}
             onDeleteSlide={handleDeleteSlide}
             onClearImages={handleClearImages}
             errorMessage={errorMessage} // Pass the error message to Preview

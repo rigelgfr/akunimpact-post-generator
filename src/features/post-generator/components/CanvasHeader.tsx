@@ -227,7 +227,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
 
   return (
     <>
-      <div className="absolute right-0 flex justify-end p-2 text-ai-cyan text-5xl">
+      <div className="lg:absolute lg:right-0 flex justify-end p-2 text-ai-cyan text-5xl">
         <Button 
             onClick={handleReset}
             variant="ghost"

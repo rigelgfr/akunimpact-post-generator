@@ -183,9 +183,9 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
   };
 
   return (
-    <div className="w-full flex items-center px-10 py-4">
-      <div className="flex justify-between items-center w-full">
-        <div className="flex items-center">
+    <div className="w-full flex items-center px-6 py-4 bg-canva-gray">
+      <div className="flex justify-center md:justify-between items-center w-full overflow-x-auto">
+        <div className="max-md:hidden flex items-center">
           <span className="text-base text-gray-500 mr-2">PREV</span>
           <button 
             className="w-6 h-6 flex items-center justify-center"
@@ -242,7 +242,7 @@ const SlideNavigation: React.FC<SlideNavigationProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center">
+        <div className="max-md:hidden flex items-center">
           <button 
             className="w-6 h-6 flex items-center justify-center"
             onClick={handleNextSlide}

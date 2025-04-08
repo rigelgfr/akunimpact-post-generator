@@ -5,12 +5,13 @@ import DetailsControl from "./DetailsControl";
 
 interface PreviewProps {
   currentImageUrl: string | null;
-  currentSlide: string; // Add a prop to track the current slide
+  currentSlide: string;
   currentDetailsType?: "char" | "item" | "const" | "info" | "other";
   onDetailsTypeChange?: (type: "char" | "item" | "const" | "info" | "other") => void;
   onDeleteSlide?: () => void;
-  onClearImages?: () => void; // Add this prop for clearing images
-  errorMessage?: string | null; // Add this prop
+  onClearImages?: () => void;
+  onAddImages?: (files: FileList) => void; // Add this prop
+  errorMessage?: string | null;
 }
 
 const Preview = ({ 
@@ -20,7 +21,8 @@ const Preview = ({
   onDetailsTypeChange = () => {},
   onDeleteSlide = () => {},
   onClearImages = () => {},
-  errorMessage = null, // Default to null if not provided
+  onAddImages = () => {}, // Default to empty function
+  errorMessage = null,
 }: PreviewProps) => {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
@@ -34,11 +36,12 @@ const Preview = ({
               onOverlayTypeChange={onDetailsTypeChange} 
               onDeleteSlide={onDeleteSlide}
               onClearImages={onClearImages}
+              onAddImages={onAddImages}
             />
           )}
         </div>
         
-        {/* Preview content */}
+        {/* Preview content remains unchanged */}
         <div className="aspect-[4/5] bg-white shadow-md overflow-hidden relative">
           {currentImageUrl ? (
             <div className="relative w-full h-full">
