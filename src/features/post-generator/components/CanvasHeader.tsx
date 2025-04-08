@@ -123,7 +123,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
     setDownloadProgress(0);
     const totalSteps = slidesWithImages.length;
     let currentStep = 0;
-
+  
     try {
       // Generate ZIP filename based on postType
       let zipFilename = postCode;
@@ -132,7 +132,7 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
       if (postType && postType !== 'New') {
         zipFilename = `${postCode}-${postType}`;
       }
-
+  
       // Process each image - applying masking when needed
       const processedImages = [];
       
@@ -162,7 +162,10 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         currentStep++;
         setDownloadProgress(Math.round((currentStep / totalSteps) * 100));
       }
-
+  
+      // Check if running on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
       // Now create zip with processed images - using existing API endpoint
       const response = await fetch('/api/download-zip', {
         method: 'POST',
@@ -171,59 +174,42 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         },
         body: JSON.stringify({ 
           images: processedImages,
-          postCode: zipFilename
+          postCode: zipFilename,
+          isMobile: isMobile
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create zip file');
+        throw new Error(errorData.error || 'Failed to download images');
       }
-
-      // Check the content type to determine response format
-      const contentType = response.headers.get('Content-Type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        // Handle JSON response (for mobile)
+  
+      if (isMobile) {
+        // Handle mobile - download individual images
         const result = await response.json();
         
-        if (result.success && result.data) {
-          // Convert base64 to blob
-          const byteCharacters = atob(result.data);
-          const byteArrays = [];
+        if (result.success && result.images) {
+          // Download each image individually
+          let downloadedCount = 0;
           
-          for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-            const slice = byteCharacters.slice(offset, offset + 512);
-            
-            const byteNumbers = new Array(slice.length);
-            for (let i = 0; i < slice.length; i++) {
-              byteNumbers[i] = slice.charCodeAt(i);
+          for (const image of result.images) {
+            try {
+              // Create an invisible link to trigger download for each image
+              await downloadImageToMobileGallery(image.imageUrl, `${image.fileName}.png`);
+              downloadedCount++;
+            } catch (err) {
+              console.error('Error downloading individual image:', err);
             }
-            
-            const byteArray = new Uint8Array(byteNumbers);
-            byteArrays.push(byteArray);
           }
           
-          const blob = new Blob(byteArrays, { type: 'application/zip' });
-          const downloadUrl = URL.createObjectURL(blob);
-          
-          // Create download link
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = `${zipFilename}.zip`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          
-          // Cleanup
-          setTimeout(() => {
-            URL.revokeObjectURL(downloadUrl);
-          }, 100);
+          toast.success(`${downloadedCount} images saved to gallery`, {
+            description: `Your images have been saved`,
+          });
         } else if (result.error) {
           throw new Error(result.error);
         }
       } else {
-        // Handle binary response (for desktop)
+        // Desktop - handle ZIP download
         const blob = await response.blob();
         const downloadUrl = URL.createObjectURL(blob);
         
@@ -238,11 +224,11 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         setTimeout(() => {
           URL.revokeObjectURL(downloadUrl);
         }, 100);
+        
+        toast.success(`Post images downloaded successfully`, {
+          description: `Saved as ${zipFilename}.zip`,
+        });
       }
-
-      toast.success(`Post images downloaded successfully`, {
-        description: `Saved as ${zipFilename}.zip`,
-      });
       
     } catch (error) {
       console.error('Download failed:', error);
@@ -256,6 +242,42 @@ const CanvasHeader: React.FC<CanvasHeaderProps> = ({ slides, postCode, postType,
         setDownloadProgress(0);
       }, 500);
     }
+  };
+  
+  // Helper function to download an image to mobile gallery
+  const downloadImageToMobileGallery = async (imageUrl: string, fileName: string): Promise<void> => {
+    // For base64 images
+    if (imageUrl.startsWith('data:')) {
+      // Create a link element
+      const a = document.createElement('a');
+      a.href = imageUrl;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Small delay before removing the element
+      await new Promise(resolve => setTimeout(resolve, 100));
+      document.body.removeChild(a);
+      return;
+    }
+    
+    // For URL images, fetch first
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    
+    // Small delay before cleaning up
+    await new Promise(resolve => setTimeout(resolve, 100));
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   const handleReset = () => {

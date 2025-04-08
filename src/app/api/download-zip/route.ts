@@ -4,13 +4,34 @@ import JSZip from 'jszip';
 
 export async function POST(request: Request) {
     try {
-        const { images, postCode } = await request.json();
+        const { images, postCode, isMobile } = await request.json();
 
         if (!images || !postCode || !Array.isArray(images) || images.length === 0) {
             return NextResponse.json({ error: 'Missing required parameters or invalid image data' }, { status: 400 });
         }
 
-        // Create a new JSZip instance
+        // For mobile, return the processed images directly
+        if (isMobile === true) {
+            const processedImages = [];
+            
+            for (let i = 0; i < images.length; i++) {
+                const { imageUrl, fileName } = images[i];
+                
+                if (!imageUrl) continue;
+                
+                processedImages.push({
+                    imageUrl,
+                    fileName: `${fileName}`
+                });
+            }
+            
+            return NextResponse.json({
+                success: true,
+                images: processedImages
+            });
+        }
+        
+        // For desktop, create ZIP as before
         const zip = new JSZip();
         
         // Process each image
@@ -88,26 +109,12 @@ export async function POST(request: Request) {
             }
         });
 
-        // For mobile compatibility, check if the client is expecting binary or JSON
-        const userAgent = request.headers.get('user-agent') || '';
-        const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-        
-        if (isMobileBrowser) {
-            // For mobile browsers, return a JSON with base64 encoded zip
-            return NextResponse.json({
-                success: true,
-                filename: `${postCode}.zip`,
-                data: zipBuffer.toString('base64'),
-                contentType: 'application/zip'
-            });
-        } else {
-            // For desktop browsers, return binary data directly
-            const response = new NextResponse(zipBuffer);
-            response.headers.set('Content-Type', 'application/zip');
-            response.headers.set('Content-Disposition', `attachment; filename="${postCode}.zip"`);
-            response.headers.set('Cache-Control', 'no-store');
-            return response;
-        }
+        // Return binary data for desktop
+        const response = new NextResponse(zipBuffer);
+        response.headers.set('Content-Type', 'application/zip');
+        response.headers.set('Content-Disposition', `attachment; filename="${postCode}.zip"`);
+        response.headers.set('Cache-Control', 'no-store');
+        return response;
 
     } catch (error) {
         console.error('Error creating ZIP file:', error);
