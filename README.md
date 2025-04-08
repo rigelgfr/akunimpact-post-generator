@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AKUNIMPACT Post Generator
 
-## Getting Started
+AKUNIMPACT Post Generator is a specialized web application designed to create professional Instagram posts for AKUNIMPACT, the premier Hoyoverse account consignment service. This tool streamlines the creation of visually appealing, branded content with minimal effort.
 
-First, run the development server:
+Visit the app: [AKUNIMPACT Post Generator](https://akunimpact-post-generator.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Model Testing**: Test the converted YOLOv8 model I trained with your own image
+- **Dynamic Preview Generation**: Real-time post previews update as you fill out the form
+- **Automatic Screenshot Layouts**: Adjust layout of slides based on image resolutions
+- **Slide Navigation & Reordering**: Easily rearrange and organize multi-slide posts
+- **UID Masking**: Protect seller privacy with automatic UID obfuscation
+- **Zip Archive Downloads**: Export all generated images in a convenient zip package
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Screenshots
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+![Simple Landing Page](https://akunimpact-post-generator.vercel.app/screenshots/app1.webp)
 
-## Learn More
+![Model Testing Page](https://akunimpact-post-generator.vercel.app/screenshots/app2.webp)
 
-To learn more about Next.js, take a look at the following resources:
+![Model Testing Result](https://akunimpact-post-generator.vercel.app/screenshots/app3.webp)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+![Post Generator Page](https://akunimpact-post-generator.vercel.app/screenshots/app4.webp)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+![Details Slide](https://akunimpact-post-generator.vercel.app/screenshots/app5.webp)
 
-## Deploy on Vercel
+![Exporting as zip](https://akunimpact-post-generator.vercel.app/screenshots/app6.webp)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Sample Results
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+![Sample Post 1](https://akunimpact-post-generator.vercel.app/screenshots/result1.webp)
+
+![Sample Post 2](https://akunimpact-post-generator.vercel.app/screenshots/result2.webp)
+UID is covered in the final export
+
+## Tech Stack
+
+- **Next.js**: React framework for production-grade applications
+- **TypeScript**: Type-safe code for robust application development
+- **TailwindCSS**: Utility-first CSS framework for responsive design
+- **ONNX Runtime Web**: Efficient machine learning inference in the browser
+- **YOLOv8 Model**: Computer vision model for image detection and processing
+- **Python & Google Colab**: Backend tools for model training and conversion
+- **Roboflow**: Platform used for image labeling and dataset management
