@@ -26,7 +26,7 @@ const Preview = ({
 }: PreviewProps) => {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="w-[360px] 2xl:max-w-xl flex flex-col">
+      <div className="w-full md:max-w-lg xl:max-w-xl flex flex-col">
         {/* Details control container - always present for spacing */}
         <div className="flex justify-center h-8">
           {/* Only render DetailsControl when on the 'details' slide */}

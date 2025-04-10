@@ -166,7 +166,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
   return (
     <div className="w-full lg:w-1/3 xl:w-1/4">
       {/* Form Section */}
-      <div className="bg-white p-6 shadow-md lg:h-screen overflow-y-auto">
+      <div className="bg-white p-6 shadow-md lg:h-full overflow-y-auto">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-800 mb-3">Configure Post</h2>
   
