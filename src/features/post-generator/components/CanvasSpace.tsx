@@ -480,7 +480,7 @@ const CanvasSpace: React.FC<CanvasSpaceProps> = ({
   }, [onReset, onImageGenerated]);
 
   return (
-      <div className="h-full flex flex-col bg-canva-gray">
+      <div className="h-full flex flex-col bg-canva-gray overflow-y-scroll">
           <CanvasHeader slides={slides} postType={postType} postCode={postCode} onReset={handleReset}/>
 
           {currentSlide.type === 'thumbnail' && (
