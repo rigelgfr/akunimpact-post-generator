@@ -4,6 +4,15 @@ AKUNIMPACT Post Generator is a specialized web application designed to create pr
 
 Visit the app: [AKUNIMPACT Post Generator](https://akunimpact-post-generator.vercel.app)
 
+![Next JS](https://img.shields.io/badge/Next-black?style=flat&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)
+![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-black?style=flat)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-blue?style=flat)
+![Google Colab](https://img.shields.io/badge/Google%20Colab-%23F9A825.svg?style=flat&logo=googlecolab&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=flat&logo=python&logoColor=ffdd54)
+![Roboflow](https://img.shields.io/badge/Roboflow-purple?style=flat)
+
 ## Features
 
 - **Model Testing**: Test the converted YOLOv8 model I trained with your own image
@@ -33,13 +42,3 @@ Visit the app: [AKUNIMPACT Post Generator](https://akunimpact-post-generator.ver
 
 ![Sample Post 2](https://akunimpact-post-generator.vercel.app/screenshots/result2.webp)
 UID is covered in the final export
-
-## Tech Stack
-
-- **Next.js**: React framework for production-grade applications
-- **TypeScript**: Type-safe code for robust application development
-- **TailwindCSS**: Utility-first CSS framework for responsive design
-- **ONNX Runtime Web**: Efficient machine learning inference in the browser
-- **YOLOv8 Model**: Computer vision model for image detection and processing
-- **Python & Google Colab**: Backend tools for model training and conversion
-- **Roboflow**: Platform used for image labeling and dataset management
