@@ -12,11 +12,13 @@ export const calculateFinalPrice = (netPrice: string, isStarterAccount: boolean)
     } else {
         // Apply markup formula
         if (numericValueInThousands < 100000) {
-            finalPrice = numericValueInThousands * 1.1;
+            finalPrice = numericValueInThousands + 5000;
         } else if (numericValueInThousands <= 299000) {
             finalPrice = numericValueInThousands + 20000;
         } else if (numericValueInThousands <= 699000) {
             finalPrice = numericValueInThousands + 30000;
+        } else if (numericValueInThousands <= 999000) {
+            finalPrice = numericValueInThousands + 50000;
         } else {
             finalPrice = numericValueInThousands * 1.08;
         }
