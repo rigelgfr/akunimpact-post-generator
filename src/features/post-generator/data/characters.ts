@@ -349,6 +349,14 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                         '/assets/post-generator/characters/genshin/zhongli/zhongli_3.webp',
                     ],
                 },
+        'Escoffier': {
+                    name: 'Escoffier',
+                    images: [
+                        '/assets/post-generator/characters/genshin/escoffier/escoffier_1.webp',
+                        '/assets/post-generator/characters/genshin/escoffier/escoffier_2.webp',
+                        '/assets/post-generator/characters/genshin/escoffier/escoffier_3.webp',
+                    ],
+                },
     },
     'hsr': {
         'Kafka': {
@@ -631,6 +639,22 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/hsr/yunli/yunli_3.webp',
             ],
         },
+        'Cipher': {
+            name: 'Cipher',
+            images: [
+                '/assets/post-generator/characters/hsr/cipher/cipher_1.webp',
+                '/assets/post-generator/characters/hsr/cipher/cipher_2.webp',
+                '/assets/post-generator/characters/hsr/cipher/cipher_3.webp',
+            ],
+        },
+        'Hyacine': {
+            name: 'Hyacine',
+            images: [
+                '/assets/post-generator/characters/hsr/hyacine/hyacine_1.webp',
+                '/assets/post-generator/characters/hsr/hyacine/hyacine_2.webp',
+                '/assets/post-generator/characters/hsr/hyacine/hyacine_3.webp',
+            ],
+        },
     },
     'zzz': {
         'Jane Doe': {
@@ -743,6 +767,38 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/zzz/yanagi/yanagi_1.webp',
                 '/assets/post-generator/characters/zzz/yanagi/yanagi_2.webp',
                 '/assets/post-generator/characters/zzz/yanagi/yanagi_3.webp',
+            ],
+        },
+        'Hugo': {
+            name: 'Hugo',
+            images: [
+                '/assets/post-generator/characters/zzz/hugo/hugo_1.webp',
+                '/assets/post-generator/characters/zzz/hugo/hugo_2.webp',
+                '/assets/post-generator/characters/zzz/hugo/hugo_3.webp',
+            ],
+        },
+                'Vivian': {
+            name: 'Vivian',
+            images: [
+                '/assets/post-generator/characters/zzz/vivian/vivian_1.webp',
+                '/assets/post-generator/characters/zzz/vivian/vivian_2.webp',
+                '/assets/post-generator/characters/zzz/vivian/vivian_3.webp',
+            ],
+        },
+        'Yixuan': {
+            name: 'Yixuan',
+            images: [
+                '/assets/post-generator/characters/zzz/yixuan/yixuan_1.webp',
+                '/assets/post-generator/characters/zzz/yixuan/yixuan_2.webp',
+                '/assets/post-generator/characters/zzz/yixuan/yixuan_3.webp',
+            ],
+        },
+        'Ju Fufu': {
+            name: 'Ju Fufu',
+            images: [
+                '/assets/post-generator/characters/zzz/ju_fufu/ju_fufu_1.webp',
+                '/assets/post-generator/characters/zzz/ju_fufu/ju_fufu_2.webp',
+                '/assets/post-generator/characters/zzz/ju_fufu/ju_fufu_3.webp',
             ],
         },
     },
