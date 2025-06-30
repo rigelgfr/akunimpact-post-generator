@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 
 interface PostFormProps {
   onFormChange: (
@@ -28,6 +29,9 @@ interface PostFormProps {
 
 const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigger }) => {
   const [selectedPostType, setSelectedPostType] = useState<string>("New")
+
+  // For code prefix toggle
+  const [codePrefix, setCodePrefix] = useState<string>("AAA")
 
   // For code input
   const [codeInput, setCodeInput] = useState("")
@@ -48,6 +52,10 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
 
   // Track what's actually being rendered to avoid unnecessary re-renders
   const [renderingDescription, setRenderingDescription] = useState("")
+
+  const handleCodePrefixToggle = () => {
+    setCodePrefix(prev => prev === "AAA" ? "CO" : "AAA")
+  }
 
   const handleCodeChange = (value: string) => {
     const cleanedValue = value.replace(/\D/g, "") // Remove non-numeric characters
@@ -109,7 +117,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
       // Use a ref to track if it's the first render
       const formData = {
         postType: selectedPostType,
-        postCode: "AAA" + code,
+        postCode: codePrefix + code,
         selectedGames,
         selectedCharacters,
         netPrice,
@@ -131,6 +139,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
   }, [
     onFormChange,
     selectedPostType, 
+    codePrefix,
     code, 
     selectedGames, 
     selectedCharacters, 
@@ -142,6 +151,7 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
   useEffect(() => {
     if (resetTrigger) {
       setSelectedPostType("New");
+      setCodePrefix("AAA");
       setCodeInput("");
       setSelectedGames([]);
       setSelectedCharacters({});
@@ -192,13 +202,21 @@ const PostForm: React.FC<PostFormProps> = ({ onFormChange, imageUrl, resetTrigge
           {/* Code Input */}
           <div className="space-y-1.5">
             <Label className=" text-base">Code:</Label>
-            <div className="flex w-full xl:w-1/3 items-center rounded-md border border-input bg-background px-3 text-sm focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
-              <span className="text-base text-muted-foreground mr-2">AAA</span>
+            <div className="flex w-full xl:w-1/3 items-center rounded-md border border-input bg-background focus-within:border-ai-cyan focus-within:ring-1 focus-within:ring-ai-cyan transition duration-150">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleCodePrefixToggle}
+                className="px-2 py-1 text-base text-muted-foreground hover:text-ai-cyan hover:bg-ai-cyan/10 transition-colors duration-150 border-0 rounded-none"
+              >
+                {codePrefix}
+              </Button>
               <Input
                 type="text"
                 value={codeInput}
                 onChange={(e) => handleCodeChange(e.target.value)}
-                className="flex-1 items-center border-0 p-0 text-base shadow-none focus-visible:ring-0"
+                className="flex-1 items-center border-0 p-0 pl-1 text-base shadow-none focus-visible:ring-0"
                 maxLength={4}
               />
             </div>
