@@ -357,6 +357,14 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                         '/assets/post-generator/characters/genshin/escoffier/escoffier_3.webp',
                     ],
                 },
+        'Skirk': {
+                    name: 'Skirk',
+                    images: [
+                        '/assets/post-generator/characters/genshin/skirk/skirk_1.webp',
+                        '/assets/post-generator/characters/genshin/skirk/skirk_2.webp',
+                        '/assets/post-generator/characters/genshin/skirk/skirk_3.webp',
+                ],
+            },
     },
     'hsr': {
         'Kafka': {
@@ -653,6 +661,22 @@ export const Characters: Record<string, Record<string, CharacterData>> = {
                 '/assets/post-generator/characters/hsr/hyacine/hyacine_1.webp',
                 '/assets/post-generator/characters/hsr/hyacine/hyacine_2.webp',
                 '/assets/post-generator/characters/hsr/hyacine/hyacine_3.webp',
+            ],
+        },
+        'Phainon': {
+            name: 'Phainon',
+            images: [
+                '/assets/post-generator/characters/hsr/phainon/phainon_1.webp',
+                '/assets/post-generator/characters/hsr/phainon/phainon_2.webp',
+                '/assets/post-generator/characters/hsr/phainon/phainon_3.webp',
+            ],
+        },
+        'Saber': {
+            name: 'Saber',
+            images: [
+                '/assets/post-generator/characters/hsr/saber/saber_1.webp',
+                '/assets/post-generator/characters/hsr/saber/saber_2.webp',
+                '/assets/post-generator/characters/hsr/saber/saber_3.webp',
             ],
         },
     },
